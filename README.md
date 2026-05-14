@@ -16,11 +16,12 @@ $ pip install -r requirements.txt
 
 ---- 
 
-
 ## Setting up bots
 
 To set up bots, go into your `~/.botty` folder and create a new folder, with its name corresponding to the bot's name. 
 All configuration files and directory will be automatically created. 
+
+Once started, you can edit all configuration files during runtime. 
 
 --- 
 
