@@ -4,9 +4,10 @@ from defined_creators import *
 from interactions import *
 from ai.chatbots import *
 from ai.chatbot_data import *
-from telegram_ai.handlers import TelegramBotHandler
-from telegram_ai.telegram_messages import *
-from telegram_ai.saves import *
+
+from defined_providers.telegram_ai.handlers import TelegramBotHandler
+from defined_providers.telegram_ai.telegram_messages import *
+from defined_providers.telegram_ai.saves import *
 
 import saves
 import threading
