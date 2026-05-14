@@ -1,0 +1,2 @@
+from .telegram_image_message import TelegramChatbotImageMessage
+from .telegram_text_message import TelegramChatbotTextualMessage
