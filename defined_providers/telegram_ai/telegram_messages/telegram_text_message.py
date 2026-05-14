@@ -1,5 +1,5 @@
 from ai.chatbot_data import ChatbotSpecs
-from telegram_ai.objects import TelegramChatbotMessage, TelegramActionWaiting
+from defined_providers.telegram_ai.objects import TelegramChatbotMessage, TelegramActionWaiting
 from interactions import CreatorsMap, CreatorsState
 from defined_creators import Sleepy
 

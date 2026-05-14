@@ -1,6 +1,6 @@
 from ai.chatbot_data import ChatbotSpecs
 from interactions import CreatorsMap, CreatorsState
-from telegram_ai.objects import TelegramChatbotMessage, TelegramActionWaiting
+from defined_providers.telegram_ai.objects import TelegramChatbotMessage, TelegramActionWaiting
 
 import telegram as _telegram
 import telegram.constants as _telegram_constants

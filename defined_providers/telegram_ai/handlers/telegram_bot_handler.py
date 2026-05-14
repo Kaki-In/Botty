@@ -7,8 +7,8 @@ import asyncio as _asyncio
 import traceback as _traceback
 import threading as _threading
 
-from telegram_ai.objects import TelegramChatbotDiscussion, TelegramChatbotMessage
-from telegram_ai.saves import TelegramBotSaver, TelegramDiscussionSaver
+from defined_providers.telegram_ai.objects import TelegramChatbotDiscussion, TelegramChatbotMessage
+from defined_providers.telegram_ai.saves import TelegramBotSaver, TelegramDiscussionSaver
 
 from interactions import CreatorsMap, CreatorsState
 

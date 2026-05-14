@@ -4,7 +4,7 @@ from ai.discussion import ChatbotDiscussion
 from ai.chatbot_data import ChatbotSpecs
 from interactions import CreatorsMap, CreatorsState
 
-from telegram_ai.saves import TelegramDiscussionSaver
+from defined_providers.telegram_ai.saves import TelegramDiscussionSaver
 
 import typing as _T
 import telegram as _telegram
