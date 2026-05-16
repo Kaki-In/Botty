@@ -10,7 +10,6 @@ from .message import TelegramMessageSaver
 
 class _telegram_chatbot_discussion_object(_T.TypedDict):
     chat: _telegram.Chat
-    last_read_time: _datetime.datetime
 
 class TelegramDiscussionPropertiesSaver():
     def __init__(self, file: _saves.ResourceFile) -> None:
@@ -23,14 +22,12 @@ class TelegramDiscussionPropertiesSaver():
     def read_properties(self, bot: _T.Optional[_telegram.Bot] = None) -> _telegram_chatbot_discussion_object:
         data = _json.loads(self.__file.read_content())
         return {
-            'chat': _telegram.Chat.de_json(data['chat'], bot),
-            'last_read_time': _datetime.datetime.fromtimestamp(data['last_read_timestamp'], _datetime.UTC)
+            'chat': _telegram.Chat.de_json(data['chat'], bot)
         }
     
-    def write_properties(self, chat: _telegram.Chat, last_read_time: _datetime.datetime) -> None:
+    def write_properties(self, chat: _telegram.Chat) -> None:
         self.__file.write_content(_json.dumps({
-            'chat': chat.to_dict(),
-            'last_read_timestamp': last_read_time.timestamp()
+            'chat': chat.to_dict()
         }, indent=2))
 
 class TelegramDiscussionSaver():

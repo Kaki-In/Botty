@@ -43,12 +43,10 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
             discussions = self.discussions
 
             for discussion in discussions:
-                last_message_time = discussion.last_message_time
-
-                if last_message_time is None or discussion.last_read_time < last_message_time:
+                if discussion.has_unread_messages:
                     try:
                         self.answer_to_discussion(discussion)
-                        discussion.mark_as_read_now()
+                        discussion.mark_as_read()
                     except _interactions.InteractionInterruptionError:
                         pass
                     except Exception:

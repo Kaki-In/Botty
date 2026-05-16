@@ -5,15 +5,13 @@ from ..chatbot_data import ChatbotSpecs
 import interactions as _interactions
 
 import typing as _T
-import datetime as _datetime
 import abc as _abc
 
 class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
-    def __init__(self, uuid: str, creators_state: _interactions.CreatorsState, last_read_time: _T.Optional[_datetime.datetime] = None) -> None:
+    def __init__(self, uuid: str, creators_state: _interactions.CreatorsState) -> None:
         super().__init__()
 
         self.__uuid = uuid
-        self.__last_read = last_read_time or _datetime.datetime.fromtimestamp(0, _datetime.UTC)
         self.__creators_state = creators_state
 
     @property
@@ -30,23 +28,17 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
         return self.__creators_state
 
     @property
-    def last_read_time(self) -> _datetime.datetime:
-        return self.__last_read
+    def has_unread_messages(self) -> bool:
+        for message in self.messages:
+            if not message.has_been_read:
+                return True
+            
+        return False
     
-    @last_read_time.setter
-    def last_read_time(self, time: _datetime.datetime) -> None:
-        self.__last_read = time
-
-    def mark_as_read_now(self) -> None:
-        self.__last_read = _datetime.datetime.now(_datetime.UTC)
+    def mark_as_read(self) -> None:
+        for message in self.messages:
+            message.mark_as_read()
     
-    @property
-    def last_message_time(self) -> _datetime.datetime | None:
-        if not len(self.messages):
-            return None
-        
-        return self.messages[-1].time
-
     @_abc.abstractmethod
     def add_message(self, message: messagesTypes) -> None:
         ...

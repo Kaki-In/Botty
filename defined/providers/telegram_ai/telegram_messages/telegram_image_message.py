@@ -75,7 +75,7 @@ class TelegramChatbotImageMessage(TelegramChatbotMessage, name="telegram.image")
         description_file = directory.get_resource('description.txt')
         description_file.write_content(extras['description'])
 
-        return cls(message, directory)
+        return cls(message, True, directory)
     
     @classmethod
     async def create_from_telegram(cls, message: _telegram.Message, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, directory: _saves.ResourcesDirectory) -> _T.Self:
@@ -93,7 +93,7 @@ class TelegramChatbotImageMessage(TelegramChatbotMessage, name="telegram.image")
         description_file = directory.get_resource('description.txt')
         description_file.write_content(description)
 
-        return cls(message, directory)
+        return cls(message, False, directory)
     
     @property
     def image(self) -> _local_utils_images.Image:

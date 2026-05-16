@@ -16,7 +16,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
     def __init__(self, message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], loop: _asyncio.AbstractEventLoop, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, bot: _telegram.Bot, directory: TelegramDiscussionSaver) -> None:
         discussion_properties = directory.properties_saver.read_properties(bot)
 
-        super().__init__(str(discussion_properties['chat'].id), creators_state, discussion_properties['last_read_time'])
+        super().__init__(str(discussion_properties['chat'].id), creators_state)
 
         self.__chat = discussion_properties['chat']
 
@@ -31,7 +31,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
 
             for message_method in self.__message_methods:
                 if message_method.class_get_messages_typename() == message_properties['message_type']:
-                    self.__messages.append(message_method.load_back(message_properties['telegram_message'], message_saver.message_saves_directory))
+                    self.__messages.append(message_method.load_back(message_properties['telegram_message'], message_properties['read'], message_saver.message_saves_directory))
         
         self.__directory = directory
 
@@ -51,10 +51,6 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
     def directory(self) -> TelegramDiscussionSaver:
         return self.__directory
     
-    def mark_as_read_now(self) -> None:
-        super().mark_as_read_now()
-        self.__directory.properties_saver.write_properties(self.__chat, self.last_read_time)
-
     def add_message(self, message: TelegramChatbotMessage) -> None:
         self.__messages.append(message)
         self.save_message(message)
@@ -63,7 +59,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
 
     def save_message(self, message: TelegramChatbotMessage) -> None:
         message_saver = self.__directory.get_message_saver(message.telegram_message)
-        message_saver.properties_file.write_message_properties(message.telegram_message, message.class_get_messages_typename())
+        message_saver.properties_file.write_message_properties(message.telegram_message, message.class_get_messages_typename(), message.has_been_read)
 
     def insert_message(self, position: int, message: TelegramChatbotMessage) -> None:
         self.__messages.insert(position, message)
@@ -118,7 +114,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
             return False
         
         message_saver = self.__directory.get_message_saver(update.effective_message)
-        message_saver.properties_file.write_message_properties(update.effective_message, message_method.class_get_messages_typename())
+        message_saver.properties_file.write_message_properties(update.effective_message, message_method.class_get_messages_typename(), False)
 
         created_message = await message_method.create_from_telegram(update.effective_message, specs, self.__creators, self.creators_state, message_saver.message_saves_directory)
 
@@ -195,6 +191,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
                 telegram_message, extras = _asyncio.run_coroutine_threadsafe(method.load_from_llm(self.__chat, specs, self.__creators, self.creators_state, data['data'], reply_to), self.__loop).result()
 
                 message_saver = self.__directory.get_message_saver(telegram_message)
+                message_saver.properties_file.write_message_properties(telegram_message, method.class_get_messages_typename(), False)
 
                 try:
                     message = _asyncio.run_coroutine_threadsafe(method.create_with_extras(telegram_message, specs, extras, message_saver.message_saves_directory), self.__loop).result()

@@ -69,17 +69,17 @@ class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender
 
     @classmethod
     async def create_with_extras(cls, message: _telegram.Message, specs: _ai_chatbot_data.ChatbotSpecs, extras, directory: _saves.ResourcesDirectory) -> _T.Self:
-        return cls(message, directory)
+        return cls(message, True, directory)
     
     @classmethod
     async def create_from_telegram(cls, message: _telegram.Message, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, directory: _saves.ResourcesDirectory) -> _T.Self:
-        return cls(message, directory)
+        return cls(message, False, directory)
     
     @classmethod
-    def load_back(cls, message: _telegram.Message, directory: _saves.ResourcesDirectory) -> _T.Self:
-        return cls(message, directory)
+    def load_back(cls, message: _telegram.Message, read: bool, directory: _saves.ResourcesDirectory) -> _T.Self:
+        return cls(message, read, directory)
 
-    def __init__(self, message: _telegram.Message, directory: _saves.ResourcesDirectory) -> None:
+    def __init__(self, message: _telegram.Message, read: bool, directory: _saves.ResourcesDirectory) -> None:
         assert message.from_user
 
         bot = message.get_bot()
@@ -91,6 +91,7 @@ class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender
 
         self.__message = message
         self.__directory = directory
+        self.__read = read
     
     @property
     def telegram_message(self) -> _telegram.Message:
@@ -131,3 +132,10 @@ class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender
     @_abc.abstractmethod
     def export_data_to_llm(self, specs: _ai_chatbot_data.ChatbotSpecs, images: list[_local_utils_images.Image]) -> _T.Any:
         ...
+        
+    def mark_as_read(self) -> None:
+        self.__read = True
+        
+    @property
+    def has_been_read(self) -> bool:
+        return self.__read

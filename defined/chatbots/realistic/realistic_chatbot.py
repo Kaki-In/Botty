@@ -122,16 +122,26 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
             found_discussion: bool = False
 
             for discussion in discussions:
-                last_message_time = discussion.last_message_time
-
                 configuration = self.__configuration.read_configuration()
 
-                if last_message_time is None or discussion.last_read_time < last_message_time \
-                    or ((_datetime.datetime.now(_datetime.UTC) - last_message_time > _datetime.timedelta(minutes=configuration['min_relaunch_after_minutes']) and _random.random() < configuration['relaunch_after_prob'])):
+                if not discussion.messages or discussion.has_unread_messages:
+                    answer = True
+                    force = True
+                    
+                elif (_datetime.datetime.now(_datetime.UTC) - discussion.messages[-1].time > _datetime.timedelta(minutes=configuration['min_relaunch_after_minutes']) and _random.random() < configuration['relaunch_after_prob']):
+                    answer = True
+                    force = False
+                    
+                else:
+                    answer = False
+                    force = False
+                
+                if answer:
                     found_discussion = True
+                    
                     try:
-                        self.answer_to_discussion(discussion, len(discussion.messages)>0 and not discussion.messages[-1].is_from_self)
-                        discussion.mark_as_read_now()
+                        self.answer_to_discussion(discussion, force)
+                        discussion.mark_as_read()
                     except _interactions.InteractionInterruptionError:
                         pass
                     except Exception:
