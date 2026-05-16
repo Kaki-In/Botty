@@ -9,7 +9,7 @@ class _image_dimensions_object(_T.TypedDict):
     height: int
 
 class AIPromptGeneratorFactory(_interactions.CreatorFactory[str, _interactions.ImageSettings]):
-    def __init__(self, chat_completor: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, str]) -> None:
+    def __init__(self, chat_completor: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
         super().__init__()
 
         self.__chat_completor = chat_completor
@@ -34,7 +34,7 @@ class AIPromptGeneratorFactory(_interactions.CreatorFactory[str, _interactions.I
             return AiPromptGenerator(self.__chat_completor.build_from(directory.get_directory("settings_choosing")), image_prompt_file.read_content(), configuration_file.read_configuration())
 
 class AiPromptGenerator(_interactions.Creator[str, _interactions.ImageSettings]):
-    def __init__(self, chat_completor: _interactions.Creator[_interactions.ChatCompletionDescription, str], image_prompt: str, conf_object: dict[str, _image_dimensions_object]):
+    def __init__(self, chat_completor: _interactions.Creator[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult], image_prompt: str, conf_object: dict[str, _image_dimensions_object]):
         super().__init__()
 
         self.__chat_completor = chat_completor
@@ -70,7 +70,7 @@ class AiPromptGenerator(_interactions.Creator[str, _interactions.ImageSettings])
             _interactions.ChatCompletionMessage('user', "Here is a basic description of the image: " + description)
         ]
 
-        image_settings = _json.loads(self.__chat_completor._create_object_from(_interactions.ChatCompletionDescription(messages, schema)))
+        image_settings = _json.loads(self.__chat_completor._create_object_from(_interactions.ChatCompletionDescription(messages, schema)).result)
 
         return _interactions.ImageSettings(
             self.__conf_object[image_settings['format']]['width'],

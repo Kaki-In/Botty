@@ -77,7 +77,7 @@ class TelegramBotHandler():
         saver = self._get_discussion_saver(chat)
 
         if not saver.properties_saver.exists:
-            saver.properties_saver.write_properties(chat, False)
+            saver.properties_saver.write_properties(chat, False, None)
 
         return TelegramChatbotDiscussion(self.__message_methods, self.__loop, self.__creators_map, self.__creators_state, chat.get_bot(), saver)
 

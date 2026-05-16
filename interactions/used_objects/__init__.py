@@ -1,4 +1,4 @@
-from .chat_completion import ChatCompletionMessage, ChatCompletionDescription, ChatCompletionTool
+from .chat_completion import ChatCompletionMessage, ChatCompletionDescription, ChatCompletionTool, ChatCompletionResult
 from .image_settings import ImageSettings
 from .sleepy import Sleepy
 from .embedding_vector import EmbeddingVector

@@ -31,15 +31,15 @@ class TimeAwareChatbotModifier(_ai_discussion.ChatbotDiscussionModifier):
 
     def modify_chat_completion(self, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionDescription:
         configuration = self.get_configuration_from(specs)
+        
+        if description.messages and isinstance(last_message:=description.messages[-1], _interactions.ChatCompletionMessage) and last_message.role == 'system':
+                return description.removing_messages(count_after=1).adding_message_after(
+                    _interactions.ChatCompletionMessage('system', last_message.content+"\n\n"+configuration['intro_text']+self.format_datetime(_datetime.datetime.now(), configuration), last_message.images)
+                )
 
-        if description.messages and description.messages[-1].role == 'system':
-            return description.removing_messages(count_after=1).adding_message_after(
-                _interactions.ChatCompletionMessage('system', description.messages[-1].content+"\n\n"+configuration['intro_text']+self.format_datetime(_datetime.datetime.now(), configuration), description.messages[-1].images)
-            )
-        else:
-            return description.adding_message_after(
-                _interactions.ChatCompletionMessage('system', configuration['intro_text']+self.format_datetime(_datetime.datetime.now(), configuration))
-            )
+        return description.adding_message_after(
+            _interactions.ChatCompletionMessage('system', configuration['intro_text']+self.format_datetime(_datetime.datetime.now(), configuration))
+        )
 
 
 

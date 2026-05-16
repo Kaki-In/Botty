@@ -55,6 +55,14 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
     def directory(self) -> TelegramDiscussionSaver:
         return self.__directory
     
+    @property
+    def current_tool_message(self) -> _telegram.Message | None:
+        return self.__directory.properties_saver.read_properties(self.__chat.get_bot())['current_tool_message']
+    
+    @current_tool_message.setter
+    def current_tool_message(self, message: _telegram.Message | None) -> None:
+        self.__directory.properties_saver.write_properties(self.__chat, not self.has_unread_messages, message)
+    
     def add_message(self, message: TelegramChatbotMessage) -> None:
         self.__messages.append(message)
         self.save_message(message)
@@ -182,8 +190,10 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         }
 
     def add_message_from_llm_response(self, specs: _ai_chatbot_data.ChatbotSpecs, response: str) -> None:
+        self.current_tool_message = None
+        
         data = _json.loads(response)
-
+        
         assert isinstance(data, dict)
 
         for method in self.message_methods:
@@ -228,10 +238,43 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
             )
             
     def mark_as_unread(self) -> None:
-        self.__directory.properties_saver.write_properties(self.__chat, False)
+        self.__directory.properties_saver.write_properties(self.__chat, False, self.current_tool_message)
             
     def mark_as_read(self) -> None:
-        self.__directory.properties_saver.write_properties(self.__chat, True)
+        self.__directory.properties_saver.write_properties(self.__chat, True, self.current_tool_message)
+        
+    def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
+        self.__loop.run_until_complete(self.prepare_tool_message(tool, args))
+
+    def on_tool_update(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
+        self.__loop.run_until_complete(self.update_tool_message(tool, args, event_data))
+
+    def on_tool_finished(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
+        self.__loop.run_until_complete(self.remove_tool_message(tool, result))
+    
+    async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
+        message = await self.__chat.send_message(f"Calling tool {tool.name}...")
+        self.current_tool_message = message
+
+    async def update_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
+        if self.current_tool_message is None:
+            await self.prepare_tool_message(tool, args)
+        
+        current_message = self.current_tool_message
+        assert current_message is not None
+        
+        await current_message.edit_text(f"Calling tool {tool.name}...\n" + event_data)
+
+    async def remove_tool_message(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
+        if self.current_tool_message is None:
+            await self.prepare_tool_message(tool, result.args)
+        
+        current_message = self.current_tool_message
+        assert current_message is not None
+        
+        await current_message.edit_text(f"{tool.name} action ended : \n" + result.result)
+    
+
 
 
 

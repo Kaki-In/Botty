@@ -11,6 +11,7 @@ from .message import TelegramMessageSaver
 class _telegram_chatbot_discussion_object(_T.TypedDict):
     chat: _telegram.Chat
     read: bool
+    current_tool_message: _telegram.Message | None
 
 class TelegramDiscussionPropertiesSaver():
     def __init__(self, file: _saves.ResourceFile) -> None:
@@ -24,18 +25,22 @@ class TelegramDiscussionPropertiesSaver():
         data = _json.loads(self.__file.read_content())
         return {
             'chat': _telegram.Chat.de_json(data['chat'], bot),
-            'read': data['read']
+            'read': data['read'],
+            'current_tool_message': _telegram.Message.de_json(data['current_tool_message'], bot)
         }
     
-    def write_properties(self, chat: _telegram.Chat, read: bool) -> None:
+    def write_properties(self, chat: _telegram.Chat, read: bool, current_tool_message: _telegram.Message | None) -> None:
         self.__file.write_content(_json.dumps({
             'chat': chat.to_dict(),
-            'read': read
+            'read': read,
+            'current_tool_message': current_tool_message.to_dict() if current_tool_message else None
         }, indent=2))
 
 class TelegramDiscussionSaver():
     def __init__(self, directory: _saves.ResourcesDirectory) -> None:
         self.__directory = directory
+        
+        self.__messages_directories = directory.get_directory('messages')
 
         self.__properties_saver = TelegramDiscussionPropertiesSaver(self.__directory.get_resource('properties.json'))
 

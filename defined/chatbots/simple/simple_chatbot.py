@@ -18,14 +18,18 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
         if not self.__prompt.exists:
             self.__prompt.write_content("You are a helpful assistant")
 
-    def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion) -> None:
+    def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion[_ai_discussion.ChatbotMessage[_ai_discussion.ChatbotSender]]) -> None:
         json_schema = discussion.get_json_schema()
 
-        messages = [
+        messages: list[_interactions.ChatCompletionMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult] = [
             _interactions.ChatCompletionMessage('system', self.__prompt.read_content() + ('' if json_schema in ('str', None) else "\n\nYou must respect the following JSON Schema:\n" + _json.dumps(json_schema)))
         ]
 
-        for message in discussion.messages:
+        for message in self.mix_messages_with_tool_calls(discussion):
+            if isinstance(message, _interactions.ChatCompletionTool.ChatCompletionToolResult):
+                messages.append(message)
+                continue
+            
             images: list[_local_utils_images.Image] = []
             
             message_content = message.export_to_llm(self.specs, images)
@@ -34,7 +38,7 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
 
             messages.append(_interactions.ChatCompletionMessage('assistant' if message.sender.is_self else 'user', message_content, images))
         
-        result_message = self.complete(_interactions.ChatCompletionDescription(messages, json_schema), discussion)
+        result_message = self.complete(_interactions.ChatCompletionDescription(messages, json_schema, discussion_uuid=discussion.uuid, tools_advancement_follower=discussion), discussion)
 
         discussion.add_message_from_llm_response(self.specs, result_message)
 

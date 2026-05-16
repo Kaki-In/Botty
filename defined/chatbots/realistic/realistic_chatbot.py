@@ -45,7 +45,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
             'relaunch_after_prob': 0.01
         })
 
-    def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion, force: bool = False) -> None:
+    def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion[_ai_discussion.ChatbotMessage[_ai_discussion.ChatbotSender]], force: bool = False) -> None:
         json_schema = discussion.get_json_schema()
 
         if json_schema in ('str', None):
@@ -73,14 +73,18 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
         if force:
             final_json_schema['minItems'] = 1
 
-        messages = [
+        messages: list[_interactions.ChatCompletionMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult] = [
             _interactions.ChatCompletionMessage('system', "\n\n---\n\n".join((self.__prompt.read_content(), discussion.get_context_prompt(self.specs), "You must respect the following JSON Schema:\n" + _json.dumps(llm_json_schema))))
         ]
 
-        for grouped_messages in discussion.grouped_sender_messages:
+        for grouped_messages in self.mix_grouped_messages_with_tool_calls(discussion):
+            if isinstance(grouped_messages, _interactions.ChatCompletionTool.ChatCompletionToolResult):
+                messages.append(grouped_messages)
+                continue
+            
             images: list[_local_utils_images.Image] = []
             
-            message_exports = [message.export_to_llm(self.specs, images) for message in grouped_messages]
+            message_exports = [message.export_to_llm(self.specs, images) for message in grouped_messages] # type:ignore because they are all chatbot messages
 
             if json_schema in ('str', None):
                 message_content = "\n\n".join(message_exports)
@@ -89,13 +93,13 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
             
             messages.append(_interactions.ChatCompletionMessage('assistant' if grouped_messages[0].is_from_self else 'user', message_content, images))
         
-        if messages[-1].role == 'assistant':
+        if isinstance(last_message:=messages[-1], _interactions.ChatCompletionMessage) and last_message.role == 'assistant':
             messages.append(_interactions.ChatCompletionMessage('system', self.__on_case_relaunch.read_content()))
 
         if len(discussion.messages) == 0:
             messages.append(_interactions.ChatCompletionMessage('system', self.__first_message_prompt.read_content()))
         
-        result_messages = _json.loads(self.complete(_interactions.ChatCompletionDescription(messages, final_json_schema), discussion))
+        result_messages = _json.loads(self.complete(_interactions.ChatCompletionDescription(messages, final_json_schema, discussion_uuid=discussion.uuid, tools_advancement_follower=discussion), discussion))
 
         for message in result_messages:
             if not json_schema in ('str', None):

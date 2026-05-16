@@ -4,7 +4,7 @@ import threading as _threading
 
 import interactions as _interactions
 
-from ..discussion import ChatbotDiscussionsProvider, ChatbotDiscussionModifier, ChatbotDiscussion
+from ..discussion import ChatbotDiscussionsProvider, ChatbotDiscussionModifier, ChatbotDiscussion, ChatbotSender, ChatbotMessage
 from ..chatbot_data import ChatbotSpecs
 
 class Chatbot(_abc.ABC):
@@ -39,8 +39,8 @@ class Chatbot(_abc.ABC):
         return self.__should_stop
 
     @property
-    def discussions(self) -> _T.Sequence[ChatbotDiscussion]:
-        discussions: list[ChatbotDiscussion] = []
+    def discussions(self) -> _T.Sequence[ChatbotDiscussion[ChatbotMessage[ChatbotSender]]]:
+        discussions: list[ChatbotDiscussion[ChatbotMessage[ChatbotSender]]] = []
 
         for discussion_provider in self.__discussions_providers:
             discussions += discussion_provider.load_all_discussions(self.__specs)
@@ -72,8 +72,59 @@ class Chatbot(_abc.ABC):
         for modifier in self.__modifiers:
             messages = modifier.modify_chat_completion(self.__specs, discussion, messages)
 
-        return discussion.creators_state.create_from_factory(self.__specs.messages_creator, messages, self.__specs.configuration_directory.get_directory("main_chat_completion"))
-
+        result = discussion.creators_state.create_from_factory(self.__specs.messages_creator, messages, self.__specs.configuration_directory.get_directory("main_chat_completion"))
+        self.__specs.save_tool_calls(discussion.uuid, result.tools_results)
+        
+        return result.result
+    
+    def mix_messages_with_tool_calls(self, discussion: ChatbotDiscussion[ChatbotMessage]) -> _T.Sequence[ChatbotMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        messages = list(discussion.messages)
+        tools_calls_messages = list(self.__specs.read_tool_calls(discussion.uuid))
+        tools_calls_messages.sort(key = lambda tool_call: tool_call.time)
+        
+        final_messages: list[ChatbotMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult] = []
+        
+        while messages and tools_calls_messages:
+            first_message = messages[0]
+            first_tool_call = tools_calls_messages[0]
+            
+            if first_message.time < first_tool_call.time:
+                final_messages.append(messages.pop(0))
+            else:
+                final_messages.append(tools_calls_messages.pop(0))
+            
+        for message in messages:
+            final_messages.append(message)
+            
+        for tool_call in tools_calls_messages:
+            final_messages.append(tool_call)
+        
+        return final_messages
+        
+    def mix_grouped_messages_with_tool_calls(self, discussion: ChatbotDiscussion) -> _T.Sequence[_T.Sequence[ChatbotMessage] | _interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        messages = list(discussion.grouped_sender_messages)
+        tools_calls_messages = list(self.__specs.read_tool_calls(discussion.uuid))
+        tools_calls_messages.sort(key = lambda tool_call: tool_call.time)
+        
+        final_messages: list[_T.Sequence[ChatbotMessage] | _interactions.ChatCompletionTool.ChatCompletionToolResult] = []
+        
+        while messages and tools_calls_messages:
+            first_message = messages[0][0]
+            first_tool_call = tools_calls_messages[0]
+            
+            if first_message.time < first_tool_call.time:
+                final_messages.append(messages.pop(0))
+            else:
+                final_messages.append(tools_calls_messages.pop(0))
+            
+        for message in messages:
+            final_messages.append(message)
+            
+        for tool_call in tools_calls_messages:
+            final_messages.append(tool_call)
+        
+        return final_messages
+        
     @_abc.abstractmethod
     def run(self) -> None:
         ...

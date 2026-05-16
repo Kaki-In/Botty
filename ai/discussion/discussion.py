@@ -39,6 +39,18 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
     @_abc.abstractmethod
     def add_message(self, message: messagesTypes) -> None:
         ...
+        
+    @_abc.abstractmethod
+    def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
+        ...
+        
+    @_abc.abstractmethod
+    def on_tool_update(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
+        ...
+    
+    @_abc.abstractmethod
+    def on_tool_finished(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
+        ...
 
     @_abc.abstractmethod
     def insert_message(self, position: int, message: messagesTypes) -> None:
@@ -54,6 +66,9 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
     
     def get_message(self, uuid: str) -> messagesTypes:
         for message in self.messages:
+            if not isinstance(message, ChatbotMessage):
+                continue
+            
             if message.uuid == uuid:
                 return message
         
@@ -73,11 +88,15 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
 
     @property
     def grouped_sender_messages(self) -> _T.Sequence[_T.Sequence[ChatbotMessage]]:
-        messages: list[list[ChatbotMessage]] = []
+        messages: list[list] = []
 
+        last_message_sender = None
         for message in self.messages:
-            if len(messages) == 0 or message.is_from_self != messages[-1][-1].is_from_self:
+            message_sender = message.is_from_self
+            
+            if last_message_sender != message_sender:
                 messages.append([message])
+                last_message_sender = message_sender
 
             else:
                 messages[-1].append(message)

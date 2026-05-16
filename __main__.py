@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     # All conversions that can be operated during the discussion for telegram bots. 
     telegramProvider.add_creator_factory(FullImageGeneratorFactory(AIPromptGeneratorFactory(ollama_creator_factory), StableDiffusionImageGeneratorFactory()), str, local_utils.images.Image)
-    telegramProvider.add_creator_factory(ImageDescriptorFactory(ollama_creator_factory), local_utils.images.Image, str)
+    telegramProvider.add_creator_factory(ImageDescriptorFactory(ollama_creator_factory), local_utils.images.Image, ChatCompletionResult)
     telegramProvider.add_creator_factory(SimplySleepCreatorFactory(), float, Sleepy)
     
     # Start bots
