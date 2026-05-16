@@ -107,7 +107,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                     try:
                         result = tool.callable(tool_directory, **tool_call.function.arguments)
                     except Exception as exc:
-                        result = 'An error occured: ' + str(exc)
+                        result = 'An error occured: ' + type(exc).__name__ + ": " + str(exc)
                     
                     messages.append(_ollama.Message(
                         role='tool',
