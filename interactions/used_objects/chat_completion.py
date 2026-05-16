@@ -1,5 +1,6 @@
 import typing as _T
 import local_utils.images as _local_utils_images
+import saves as _saves
 
 class ChatCompletionMessage():
     def __init__(self, role: str, content: str, images: _T.Optional[_T.Sequence[_local_utils_images.Image]] = None):
@@ -20,6 +21,9 @@ class ChatCompletionMessage():
         return self.__images
 
 class ChatCompletionTool():
+    class ToolCallable(_T.Protocol):
+        def __call__(self, directory: _saves.ResourcesDirectory, **kwargs) -> _T.Any: ...
+
     class Parameter():
         def __init__(self, schema: _T.Any, required: bool = True) -> None:
             self.__schema = schema
@@ -33,7 +37,7 @@ class ChatCompletionTool():
         def is_required(self) -> bool:
             return self.__required
 
-    def __init__(self, name: str, callable: _T.Callable, description: _T.Optional[str]=None, **parameters: Parameter) -> None:
+    def __init__(self, name: str, callable: ToolCallable, description: _T.Optional[str]=None, **parameters: Parameter) -> None:
         self.__name = name
         self.__callable = callable
         self.__description = description

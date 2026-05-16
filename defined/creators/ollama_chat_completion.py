@@ -28,14 +28,15 @@ class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.Chat
 
         client = _ollama.AsyncClient(config['hostname'])
 
-        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']))
+        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), directory)
 
 class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDescription, str]):
-    def __init__(self, client: _ollama.AsyncClient, model_name: str, base_options: _ollama.Options) -> None:
+    def __init__(self, client: _ollama.AsyncClient, model_name: str, base_options: _ollama.Options, directory: _saves.ResourcesDirectory) -> None:
         super().__init__()
 
         self.__client = client
 #        client.chat(model_name, options=base_options)
+        self.__directory = directory
 
         self.__model_name = model_name
         self.__base_options = base_options
@@ -99,9 +100,11 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                     return message.content or ''
                 
                 for tool_call in message.tool_calls:
-                    fn = tool_call.function
-                    tool = tools_by_name[fn.name]
-                    result = tool.callable(**fn.arguments)
+                    tool = tools_by_name[tool_call.function.name]
+                    
+                    tool_directory = self.__directory.get_directory(tool.name)
+                    result = tool.callable(tool_directory, **tool_call.function.arguments)
+                    
                     messages.append(_ollama.Message(
                         role='tool',
                         content=str(result)
