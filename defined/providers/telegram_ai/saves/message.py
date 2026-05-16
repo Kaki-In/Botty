@@ -7,7 +7,6 @@ import shutil as _shutil
 class _telegram_properties_file_object(_T.TypedDict):
     telegram_message: _telegram.Message
     message_type: str
-    read: bool
 
 class TelegramMessagePropertiesFile():
     def __init__(self, resource: _saves.ResourceFile) -> None:
@@ -17,15 +16,13 @@ class TelegramMessagePropertiesFile():
         data = _json.loads(self.__resource.read_content())
         return {
             'telegram_message': _telegram.Message.de_json(data['telegram_data'], bot),
-            'message_type': data['message_type'],
-            'read': data['read']
+            'message_type': data['message_type']
         }
     
-    def write_message_properties(self, message: _telegram.Message, message_type: str, read: bool) -> None:
+    def write_message_properties(self, message: _telegram.Message, message_type: str) -> None:
         self.__resource.write_content(_json.dumps({
             'telegram_data': message.to_dict(),
-            'message_type': message_type,
-            'read': read
+            'message_type': message_type
         }, indent=2))
 
 class TelegramMessageSaver():

@@ -2,7 +2,6 @@ import telegram as _telegram
 import telegram.ext as _telegram_ext
 import telegram.constants as _telegram_constants
 import typing as _T
-import datetime as _datetime
 import asyncio as _asyncio
 import traceback as _traceback
 import threading as _threading
@@ -78,7 +77,7 @@ class TelegramBotHandler():
         saver = self._get_discussion_saver(chat)
 
         if not saver.properties_saver.exists:
-            saver.properties_saver.write_properties(chat)
+            saver.properties_saver.write_properties(chat, False)
 
         return TelegramChatbotDiscussion(self.__message_methods, self.__loop, self.__creators_map, self.__creators_state, chat.get_bot(), saver)
 

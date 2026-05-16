@@ -46,17 +46,7 @@ class ChatbotMessage[senderType: ChatbotSender](_abc.ABC):
     def is_from_self(self) -> bool:
         return self.__chatbot_sender.is_self
     
-    @property
-    @_abc.abstractmethod
-    def has_been_read(self) -> bool:
-        ...
-    
     @_abc.abstractmethod
     def export_to_llm(self, specs: ChatbotSpecs, images: list[_local_utils_images.Image]) -> _T.Any:
         ...
         
-    @_abc.abstractmethod
-    def mark_as_read(self) -> None:
-        ...
-
-

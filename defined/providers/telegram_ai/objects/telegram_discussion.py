@@ -31,10 +31,14 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
 
             for message_method in self.__message_methods:
                 if message_method.class_get_messages_typename() == message_properties['message_type']:
-                    self.__messages.append(message_method.load_back(message_properties['telegram_message'], message_properties['read'], message_saver.message_saves_directory))
+                    self.__messages.append(message_method.load_back(message_properties['telegram_message'], message_saver.message_saves_directory))
         
         self.__directory = directory
-
+        
+    @property
+    def has_unread_messages(self) -> bool:
+        return not self.__directory.properties_saver.read_properties()['read']
+    
     @property
     def chat(self) -> _telegram.Chat:
         return self.__chat
@@ -59,7 +63,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
 
     def save_message(self, message: TelegramChatbotMessage) -> None:
         message_saver = self.__directory.get_message_saver(message.telegram_message)
-        message_saver.properties_file.write_message_properties(message.telegram_message, message.class_get_messages_typename(), message.has_been_read)
+        message_saver.properties_file.write_message_properties(message.telegram_message, message.class_get_messages_typename())
 
     def insert_message(self, position: int, message: TelegramChatbotMessage) -> None:
         self.__messages.insert(position, message)
@@ -114,7 +118,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
             return False
         
         message_saver = self.__directory.get_message_saver(update.effective_message)
-        message_saver.properties_file.write_message_properties(update.effective_message, message_method.class_get_messages_typename(), False)
+        message_saver.properties_file.write_message_properties(update.effective_message, message_method.class_get_messages_typename())
 
         created_message = await message_method.create_from_telegram(update.effective_message, specs, self.__creators, self.creators_state, message_saver.message_saves_directory)
 
@@ -124,6 +128,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
             self.add_message(created_message)
         
         self.save_message(created_message)
+        self.mark_as_unread()
 
         return True
 
@@ -191,7 +196,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
                 telegram_message, extras = _asyncio.run_coroutine_threadsafe(method.load_from_llm(self.__chat, specs, self.__creators, self.creators_state, data['data'], reply_to), self.__loop).result()
 
                 message_saver = self.__directory.get_message_saver(telegram_message)
-                message_saver.properties_file.write_message_properties(telegram_message, method.class_get_messages_typename(), False)
+                message_saver.properties_file.write_message_properties(telegram_message, method.class_get_messages_typename())
 
                 try:
                     message = _asyncio.run_coroutine_threadsafe(method.create_with_extras(telegram_message, specs, extras, message_saver.message_saves_directory), self.__loop).result()
@@ -221,7 +226,12 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
                 discussion_name = self.__chat.effective_name or self.__chat.id,
                 members_count=_asyncio.run_coroutine_threadsafe(self.__chat.get_member_count(), self.__loop).result()
             )
-
+            
+    def mark_as_unread(self) -> None:
+        self.__directory.properties_saver.write_properties(self.__chat, False)
+            
+    def mark_as_read(self) -> None:
+        self.__directory.properties_saver.write_properties(self.__chat, True)
 
 
 

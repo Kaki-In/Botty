@@ -28,17 +28,14 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
         return self.__creators_state
 
     @property
+    @_abc.abstractmethod
     def has_unread_messages(self) -> bool:
-        for message in self.messages:
-            if not message.has_been_read:
-                return True
-            
-        return False
+        ...
     
+    @_abc.abstractmethod
     def mark_as_read(self) -> None:
-        for message in self.messages:
-            message.mark_as_read()
-    
+        ...
+        
     @_abc.abstractmethod
     def add_message(self, message: messagesTypes) -> None:
         ...
