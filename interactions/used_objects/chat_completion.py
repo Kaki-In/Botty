@@ -33,14 +33,19 @@ class ChatCompletionTool():
         def is_required(self) -> bool:
             return self.__required
 
-    def __init__(self, name: str, description: _T.Optional[str]=None, **parameters: Parameter) -> None:
+    def __init__(self, name: str, callable: _T.Callable, description: _T.Optional[str]=None, **parameters: Parameter) -> None:
         self.__name = name
+        self.__callable = callable
         self.__description = description
         self.__parameters = parameters
 
     @property
     def name(self) -> str:
         return self.__name
+    
+    @property
+    def callable(self) -> _T.Callable:
+        return self.__callable
     
     @property
     def description(self) -> str | None:

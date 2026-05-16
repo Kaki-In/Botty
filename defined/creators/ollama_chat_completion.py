@@ -75,14 +75,40 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         else:
             tools = None
 
-        async def chat():
+        tools_by_name = {tool.name: tool for tool in description.tools}
+        
+        async def chat() -> str:
             self.__current_task = _asyncio.current_task()
-            return await self.__client.chat(model=self.__model_name, messages=messages, options=self.__base_options, format=description.json_schema, think=False, keep_alive=0, tools=tools)
-
+            messages.copy()
+            
+            while True:
+                response = await self.__client.chat(
+                    model=self.__model_name,
+                    messages=messages,
+                    options=self.__base_options,
+                    format=description.json_schema,
+                    think=False,
+                    keep_alive=0,
+                    tools=tools
+                )
+                
+                message = response.message
+                messages.append(message)
+                
+                if not message.tool_calls:
+                    return message.content or ''
+                
+                for tool_call in message.tool_calls:
+                    fn = tool_call.function
+                    tool = tools_by_name[fn.name]
+                    result = tool.callable(**fn.arguments)
+                    messages.append(_ollama.Message(
+                        role='tool',
+                        content=str(result)
+                    ))
         try:
             print("Chatting at", _datetime.datetime.now(), self)
-            result = self.__loop.run_until_complete(chat()).message.content
-            assert result is not None
+            result = self.__loop.run_until_complete(chat())
             print("Finished chat without any interruption at", _datetime.datetime.now(), self)
         except (_httpx.CloseError, _asyncio.CancelledError):
             print("Closed at", _datetime.datetime.now())
