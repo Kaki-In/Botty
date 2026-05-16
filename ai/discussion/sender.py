@@ -2,9 +2,6 @@ import abc as _abc
 import typing as _T
 
 class ChatbotSender(_abc.ABC):
-    _subclasses = {}
-    _defined_elements = {}
-
     def __init__(self, uuid: str, is_self: bool) -> None:
         super().__init__()
 

@@ -1,14 +1,15 @@
 from .message import ChatbotMessage
 
-from ai.chatbot_data import ChatbotSpecs
-from interactions import CreatorsState
+from ..chatbot_data import ChatbotSpecs
+
+import interactions as _interactions
 
 import typing as _T
 import datetime as _datetime
 import abc as _abc
 
 class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
-    def __init__(self, uuid: str, creators_state: CreatorsState, last_read_time: _T.Optional[_datetime.datetime] = None) -> None:
+    def __init__(self, uuid: str, creators_state: _interactions.CreatorsState, last_read_time: _T.Optional[_datetime.datetime] = None) -> None:
         super().__init__()
 
         self.__uuid = uuid
@@ -25,7 +26,7 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
         ...
 
     @property
-    def creators_state(self) -> CreatorsState:
+    def creators_state(self) -> _interactions.CreatorsState:
         return self.__creators_state
 
     @property

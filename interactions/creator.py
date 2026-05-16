@@ -18,7 +18,7 @@ class Creator[InteractionDescriptorType, InteractionType](_abc.ABC):
         ...
 
     def on_interruption(self) -> None:
-        pass
+        ...
     
     @property
     def should_interrupt(self) -> bool:
@@ -29,6 +29,7 @@ class Creator[InteractionDescriptorType, InteractionType](_abc.ABC):
 
     def interrupt(self) -> None:
         print("Interrupting", self)
+        self.on_interruption()
         self.__should_interrupt = True
     
     def raise_interruption_if_needed(self) -> None:

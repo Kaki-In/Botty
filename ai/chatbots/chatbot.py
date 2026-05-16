@@ -2,13 +2,10 @@ import abc as _abc
 import typing as _T
 import threading as _threading
 
-from .discussion_provider import ChatbotDiscussionsProvider
-from .discussion_modifier import ChatbotDiscussionModifier
+import interactions as _interactions
 
-from defined_creators.used_objects import ChatCompletionDescription
-
-from ai.discussion import ChatbotDiscussion
-from ai.chatbot_data import ChatbotSpecs
+from ..discussion import ChatbotDiscussionsProvider, ChatbotDiscussionModifier, ChatbotDiscussion
+from ..chatbot_data import ChatbotSpecs
 
 class Chatbot(_abc.ABC):
     _subclasses = {}
@@ -71,7 +68,7 @@ class Chatbot(_abc.ABC):
             
         raise ReferenceError("discussion not found")
     
-    def complete(self, messages: ChatCompletionDescription, discussion: ChatbotDiscussion) -> str:
+    def complete(self, messages: _interactions.ChatCompletionDescription, discussion: ChatbotDiscussion) -> str:
         for modifier in self.__modifiers:
             messages = modifier.modify_chat_completion(self.__specs, discussion, messages)
 

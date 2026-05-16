@@ -4,7 +4,7 @@ import datetime as _datetime
 import local_utils.images as _local_utils_images
 
 from .sender import ChatbotSender
-from ai.chatbot_data import ChatbotSpecs
+from ..chatbot_data import ChatbotSpecs
 
 class ChatbotMessage[senderType: ChatbotSender](_abc.ABC):
     _cls_name: str

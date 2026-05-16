@@ -1,6 +1,5 @@
 from .chatbot import Chatbot
-from .discussion_modifier import ChatbotDiscussionModifier
-from .discussion_provider import ChatbotDiscussionsProvider
+from ..discussion import ChatbotDiscussionModifier, ChatbotDiscussionsProvider
 
 import typing as _T
 

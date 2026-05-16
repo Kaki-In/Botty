@@ -3,3 +3,5 @@ from .creator_factory import CreatorFactory
 from .interruption_error import InteractionInterruptionError
 from .creators_map import CreatorsMap
 from .creators_state import CreatorsState
+
+from .used_objects import *

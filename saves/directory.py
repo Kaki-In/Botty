@@ -27,4 +27,10 @@ class ResourcesDirectory():
     
     def get_resource(self, name: str) -> ResourceFile:
         return ResourceFile(self._create_subpath(name))
+    
+    def __eq__(self, value: object) -> bool:
+        if isinstance(dir:=value, ResourcesDirectory):
+            return dir.__path == self.__path
+        
+        return super().__eq__(value)
 
