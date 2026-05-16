@@ -46,8 +46,6 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
         })
 
     def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion, force: bool = False) -> None:
-        print(self.name, "answering to", discussion)
-
         json_schema = discussion.get_json_schema()
 
         if json_schema in ('str', None):
@@ -140,15 +138,16 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                     found_discussion = True
                     
                     try:
+                        print(self.name, "answering to discussion", discussion)
                         self.answer_to_discussion(discussion, force)
                         discussion.mark_as_read()
-                    except _interactions.InteractionInterruptionError:
-                        pass
-                    except Exception:
-                        traceback.print_exc()
-                    finally:
                         print(self.name, "answered to discussion")
-            
+                    except _interactions.InteractionInterruptionError:
+                        print(self.name, "has been interrupted while responding")
+                    except Exception:
+                        print(self.name, "got an error answering")
+                        traceback.print_exc()
+
             if found_discussion:
                 wait_time_coeff /= 2
             else:

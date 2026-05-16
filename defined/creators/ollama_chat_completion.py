@@ -46,8 +46,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
     def on_interruption(self) -> None:
         if self.__current_task is not None:
             self.__current_task.cancel()
-        
-        print("client has been closed at", _datetime.datetime.now(), self)
 
     def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> str:
         messages = [
@@ -105,6 +103,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                     tool_directory = self.__directory.get_directory(tool.name)
                     
                     try:
+                        print("Calling tool", tool, "with arguments", tool_call.function.arguments)
                         result = tool.callable(tool_directory, **tool_call.function.arguments)
                     except Exception as exc:
                         result = 'An error occured: ' + type(exc).__name__ + ": " + str(exc)
@@ -114,17 +113,12 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                         content=result
                     ))
         try:
-            print("Chatting at", _datetime.datetime.now(), self)
             result = self.__loop.run_until_complete(chat())
-            print("Finished chat without any interruption at", _datetime.datetime.now(), self)
         except (_httpx.CloseError, _asyncio.CancelledError):
-            print("Closed at", _datetime.datetime.now())
             raise _interactions.InteractionInterruptionError()
         
         self.raise_interruption_if_needed()
         
-        print(_json.dumps(description.json_schema), result)
-
         return result
 
 
