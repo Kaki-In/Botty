@@ -22,7 +22,7 @@ class ChatCompletionMessage():
 
 class ChatCompletionTool():
     class ToolCallable(_T.Protocol):
-        def __call__(self, directory: _saves.ResourcesDirectory, **kwargs) -> _T.Any: ...
+        def __call__(self, directory: _saves.ResourcesDirectory, **kwargs) -> str: ...
 
     class Parameter():
         def __init__(self, schema: _T.Any, required: bool = True) -> None:

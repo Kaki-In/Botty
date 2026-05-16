@@ -103,11 +103,15 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                     tool = tools_by_name[tool_call.function.name]
                     
                     tool_directory = self.__directory.get_directory(tool.name)
-                    result = tool.callable(tool_directory, **tool_call.function.arguments)
+                    
+                    try:
+                        result = tool.callable(tool_directory, **tool_call.function.arguments)
+                    except Exception as exc:
+                        result = 'An error occured: ' + str(exc)
                     
                     messages.append(_ollama.Message(
                         role='tool',
-                        content=str(result)
+                        content=result
                     ))
         try:
             print("Chatting at", _datetime.datetime.now(), self)
