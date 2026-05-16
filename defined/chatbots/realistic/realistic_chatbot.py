@@ -108,7 +108,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
         if len(result_messages) == 0:
             print(self.name, "did not answer anything")
 
-    def calculate_wait_time(self, coeff: int) -> float:
+    def calculate_wait_time(self, coeff: float) -> float:
         configuration = self.__configuration.read_configuration()
 
         return configuration['max_waiting_seconds'] - (configuration['max_waiting_seconds'] - configuration['min_waiting_seconds']) * _math.exp(-5 * coeff / configuration['complete_cold_state_count']) # 5 because 1 - exp(-5) > 99%
@@ -146,7 +146,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
 
             t = _time.monotonic()
             
-            while _time.monotonic() - t < wait_time_coeff and not self.should_stop:
+            while _time.monotonic() - t < self.calculate_wait_time(wait_time_coeff) and not self.should_stop:
                 _time.sleep(0.1)
 
 
