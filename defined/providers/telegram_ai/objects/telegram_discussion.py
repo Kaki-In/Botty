@@ -248,13 +248,13 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         self.__directory.properties_saver.write_properties(self.__chat, True, self.current_tool_message)
         
     def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
-        self.__loop.run_until_complete(self.prepare_tool_message(tool, args))
+        _asyncio.run_coroutine_threadsafe(self.prepare_tool_message(tool, args), self.__loop).result()
 
     def on_tool_update(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
-        self.__loop.run_until_complete(self.update_tool_message(tool, args, event_data))
+        _asyncio.run_coroutine_threadsafe(self.update_tool_message(tool, args, event_data), self.__loop).result()
 
     def on_tool_finished(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
-        self.__loop.run_until_complete(self.remove_tool_message(tool, result))
+        _asyncio.run_coroutine_threadsafe(self.remove_tool_message(tool, result), self.__loop).result()
     
     async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
         message = await self.__chat.send_message(f"Calling tool {tool.name}...")

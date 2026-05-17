@@ -25,7 +25,6 @@ class TelegramChatbotSender(_ai_discussion.ChatbotSender):
     
     def export_to_llm(self):
         return {
-            'user_id': self.__user.id,
             'username': self.__user.full_name,
             'language_code': self.__user.language_code,
             'is_you': self.is_self

@@ -63,11 +63,12 @@ class ChatCompletionTool():
         def is_required(self) -> bool:
             return self.__required
 
-    def __init__(self, name: str, callable: ToolCallable, description: _T.Optional[str]=None, **parameters: Parameter) -> None:
+    def __init__(self, name: str, callable: ToolCallable, description: _T.Optional[str]=None, is_ephemeral = False, **parameters: Parameter) -> None:
         self.__name = name
         self.__callable = callable
         self.__description = description
         self.__parameters = parameters
+        self.__is_ephemeral = is_ephemeral
 
     @property
     def name(self) -> str:
@@ -84,6 +85,10 @@ class ChatCompletionTool():
     @property
     def parameters(self) -> _T.Mapping[str, Parameter]:
         return self.__parameters
+    
+    @property
+    def is_ephemeral(self) -> bool:
+        return self.__is_ephemeral
     
 class ChatCompletionDescription():
     class ToolAdvancementFollower(_T.Protocol):
@@ -143,22 +148,22 @@ class ChatCompletionDescription():
             else:
                 break
         
-        return ChatCompletionDescription(first_messages + list(messages) + last_messages, self.__json_schema, self.__tools, self.__discussion_uuid)
+        return ChatCompletionDescription(first_messages + list(messages) + last_messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower)
     
     def adding_message_after(self, *messages: ChatCompletionMessage | ChatCompletionTool.ChatCompletionToolResult) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(list(self.__messages) + list(messages), self.__json_schema, self.__tools, self.__discussion_uuid)
+        return ChatCompletionDescription(list(self.__messages) + list(messages), self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower)
     
     def adding_tools(self, *tools: ChatCompletionTool) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, self.__json_schema, list(self.__tools) + list(tools), self.__discussion_uuid)
+        return ChatCompletionDescription(self.__messages, self.__json_schema, list(self.__tools) + list(tools), self.__discussion_uuid, self.__tools_advancement_follower)
     
     def without_tools(self) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, self.__json_schema, discussion_uuid=self.__discussion_uuid)
+        return ChatCompletionDescription(self.__messages, self.__json_schema, discussion_uuid=self.__discussion_uuid, tools_advancement_follower=self.__tools_advancement_follower)
     
     def without_json_schema(self) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, tools = self.__tools, discussion_uuid=self.__discussion_uuid)
+        return ChatCompletionDescription(self.__messages, tools = self.__tools, discussion_uuid=self.__discussion_uuid, tools_advancement_follower=self.__tools_advancement_follower)
     
     def with_json_schema(self, schema) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, schema, self.__tools, self.__discussion_uuid)
+        return ChatCompletionDescription(self.__messages, schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower)
 
 class ChatCompletionResult():
     def __init__(self, result: str, tools_results: _T.Sequence[ChatCompletionTool.ChatCompletionToolResult]) -> None:

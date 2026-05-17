@@ -10,21 +10,21 @@ import babel.dates as _babel_dates
 
 class _time_aware_configuration_object(_T.TypedDict):
     format: str
-    utc: tuple[int, int] | None
+    utc: tuple[int, int] | list[int]
     locale: str
     intro_text: str
 
 class TimeAwareChatbotModifier(_ai_discussion.ChatbotDiscussionModifier):
     def get_configuration_from(self, specs: _ai_chatbot_data.ChatbotSpecs) -> _time_aware_configuration_object:
         return _saves.ConfigurationFile[_time_aware_configuration_object](specs.configuration_directory.get_directory('time_aware').get_resource('conf.json'), {
-                'format': "%A %d %B %Y à %Hh%M",
-                "utc": None,
+                'format': "yyyy-MM-dd 'at' HH:mm", 
+                "utc": [0, 0],
                 "locale": "en_US.utf-8",
                 "intro_text": "Current time and date are : "
             }).read_configuration()
     
     def format_datetime(self, datetime: _datetime.datetime, configuration: _time_aware_configuration_object) -> str:
-        hours, minutes = configuration.get('utc') or [0, 0]
+        hours, minutes = configuration['utc']
         utc = _datetime.timezone(_datetime.timedelta(hours=hours, minutes=minutes))
 
         return _babel_dates.format_datetime(datetime, configuration['format'], utc, configuration['locale'])
