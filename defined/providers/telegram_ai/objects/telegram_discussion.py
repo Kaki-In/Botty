@@ -11,6 +11,7 @@ import telegram.constants as _telegram_constants
 import asyncio as _asyncio
 import json as _json
 import traceback as _traceback
+import html as _html
 
 class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbotMessage]):
     def __init__(self, message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], loop: _asyncio.AbstractEventLoop, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, bot: _telegram.Bot, directory: TelegramDiscussionSaver) -> None:
@@ -225,20 +226,27 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         # Need to load all files, so that they are both created
         private_context = specs.directory.get_directory("telegram").get_directory('conf').get_resource('private_prompt.txt')
         if not private_context.exists:
-            private_context.write_content('You are speaking in a Telegram private discussion with {distant_username}. ')
+            private_context.write_content('You are speaking in a Telegram private discussion with {distant_username}. \nYour username is {local_username} and your full name is {local_full_name}.')
 
         group_context = specs.directory.get_directory("telegram").get_directory('conf').get_resource('group_prompt.txt')
         if not group_context.exists:
-            group_context.write_content('You are speaking in a Telegram public discussion named \"{discussion_name}\", containing {members_count} members.\nYou should stay quiet most of the time.')
+            group_context.write_content('You are speaking in a Telegram public discussion named \"{discussion_name}\", containing {members_count} members.\nYou should stay quiet most of the time.\nYour user name is {local_username} and your full name is {local_full_name}.')
+            
+        bot_user = self.__chat.get_bot()._bot_user
+        assert bot_user is not None
 
         if self.__chat.type == _telegram_constants.ChatType.PRIVATE:
             return private_context.read_content().format(
-                distant_username=self.__chat.username or "a single distant user"
+                distant_username=self.__chat.username or "a single distant user",
+                local_username=bot_user.username,
+                local_full_name=bot_user.full_name
             )
         else:
             return group_context.read_content().format(
                 discussion_name = self.__chat.effective_name or self.__chat.id,
-                members_count=_asyncio.run_coroutine_threadsafe(self.__chat.get_member_count(), self.__loop).result()
+                members_count=_asyncio.run_coroutine_threadsafe(self.__chat.get_member_count(), self.__loop).result(),
+                local_username=bot_user.username,
+                local_full_name=bot_user.full_name
             )
             
     def mark_as_unread(self) -> None:
@@ -257,7 +265,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         _asyncio.run_coroutine_threadsafe(self.remove_tool_message(tool, result), self.__loop).result()
     
     async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
-        message = await self.__chat.send_message(f"Calling tool {tool.name}...")
+        message = await self.__chat.send_message(f"<i>Calling tool {_html.escape(tool.name)}...</i>", parse_mode=_telegram_constants.ParseMode.HTML)
         self.current_tool_message = message
 
     async def update_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
@@ -267,7 +275,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         current_message = self.current_tool_message
         assert current_message is not None
         
-        await current_message.edit_text(f"Calling tool {tool.name}...\n" + event_data)
+        await current_message.edit_text(f"<i>Calling tool {_html.escape(tool.name)}...\n{_html.escape(event_data)}</i>", parse_mode=_telegram_constants.ParseMode.HTML)
 
     async def remove_tool_message(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
         self.__directory.save_tool_call(result)
@@ -278,11 +286,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         current_message = self.current_tool_message
         assert current_message is not None
         
-        await current_message.edit_text(f"{tool.name} action ended : \n" + result.result)
+        await current_message.edit_text(f"<i>{_html.escape(tool.name)} action ended : \n{_html.escape(result.result)}</i>", parse_mode=_telegram_constants.ParseMode.HTML)
         
-
-    
-
-
 
 
