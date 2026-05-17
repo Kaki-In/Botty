@@ -226,11 +226,11 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         # Need to load all files, so that they are both created
         private_context = specs.directory.get_directory("telegram").get_directory('conf').get_resource('private_prompt.txt')
         if not private_context.exists:
-            private_context.write_content('You are speaking in a Telegram private discussion with {distant_username}. \nYour username is {local_username} and your full name is {local_full_name}.')
+            private_context.write_content('You are speaking in a private discussion with {distant_username}. \nYour username is {local_username} and your full name is {local_full_name}.')
 
         group_context = specs.directory.get_directory("telegram").get_directory('conf').get_resource('group_prompt.txt')
         if not group_context.exists:
-            group_context.write_content('You are speaking in a Telegram public discussion named \"{discussion_name}\", containing {members_count} members.\nYou should stay quiet most of the time.\nYour user name is {local_username} and your full name is {local_full_name}.')
+            group_context.write_content('You are speaking in a public group discussion named \"{discussion_name}\", containing {members_count} members.\nYou should stay quiet most of the time.\nYour user name is {local_username} and your full name is {local_full_name}.')
             
         bot_user = self.__chat.get_bot()._bot_user
         assert bot_user is not None

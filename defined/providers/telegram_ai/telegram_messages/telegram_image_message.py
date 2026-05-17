@@ -10,7 +10,7 @@ import local_utils.images as _local_utils_images
 import io as _io
 import saves as _saves
 
-class TelegramChatbotImageMessage(TelegramChatbotMessage, name="telegram.image"):
+class TelegramChatbotImageMessage(TelegramChatbotMessage, name="image"):
     @classmethod
     def class_get_json_schema(cls) -> _T.Any:
         return {

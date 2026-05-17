@@ -18,7 +18,7 @@ class _telegram_textual_messages_config_object(_T.TypedDict):
     wait_duration: _telegram_textual_message_minmax_object
     per_char_duration: _telegram_textual_message_minmax_object
 
-class TelegramChatbotTextualMessage(TelegramChatbotMessage, name="telegram.text"):
+class TelegramChatbotTextualMessage(TelegramChatbotMessage, name="text"):
     @classmethod
     def accepts(cls, message: _telegram.Message) -> bool:
         return message.text is not None
