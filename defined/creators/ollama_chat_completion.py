@@ -91,6 +91,29 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         else:
             tools_directory = self.__directory
             
+        if tools and description.json_schema:
+            schema = {
+                'oneOf': [
+                    description.json_schema,
+                    {
+                        'type': 'object',
+                        'properties': {
+                            'tool_name': {
+                                'type': 'string',
+                                'enum': [tool.name for tool in description.tools]
+                            },
+                            'arguments': {
+                                'type': 'object'
+                            }
+                        },
+                        'required': ['tool_name'],
+                        'additionalProperties': False
+                    }
+                ]
+            }
+        else:
+            schema = description.json_schema
+        
         async def chat() -> _interactions.ChatCompletionResult:
             self.__current_task = _asyncio.current_task()
             messages.copy()
@@ -98,6 +121,8 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             called_tools: list[_interactions.ChatCompletionTool.ChatCompletionToolResult] = []
             
             while True:
+                self.raise_interruption_if_needed()
+                
                 response = await self.__client.chat(
                     model=self.__model_name,
                     messages=messages,
@@ -108,11 +133,32 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                     tools=tools
                 )
                 
+                self.raise_interruption_if_needed()
+                
                 message = response.message
-                messages.append(message)
+                
+                if message.content:
+                    try:
+                        tool_call = _json.loads(message.content)
+                        if isinstance(tool_call, dict) and 'tool_name' in tool_call:
+                            message.content = None
+                            message.tool_calls = list(message.tool_calls or []) + [
+                                _ollama.Message.ToolCall(
+                                    function = _ollama.Message.ToolCall.Function(
+                                        name = tool_call['tool_name'],
+                                        arguments = tool_call.get('arguments') or {}
+                                    )
+                                )
+                            ]
+                    except:
+                        pass
                 
                 if not message.tool_calls:
                     return _interactions.ChatCompletionResult(message.content or '', called_tools)
+                
+                messages.append(message)
+                
+                self.raise_interruption_if_needed()
                 
                 for tool_call in message.tool_calls:
                     tool = tools_by_name[tool_call.function.name]
@@ -149,8 +195,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             result = self.__loop.run_until_complete(chat())
         except (_httpx.CloseError, _asyncio.CancelledError):
             raise _interactions.InteractionInterruptionError()
-        
-        self.raise_interruption_if_needed()
         
         return result
 
