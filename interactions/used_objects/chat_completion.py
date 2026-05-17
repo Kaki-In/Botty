@@ -131,6 +131,20 @@ class ChatCompletionDescription():
     def adding_message_before(self, *messages: ChatCompletionMessage | ChatCompletionTool.ChatCompletionToolResult) -> 'ChatCompletionDescription':
         return ChatCompletionDescription(list(messages) + list(self.__messages), self.__json_schema, self.__tools, self.__discussion_uuid)
     
+    def adding_message_just_after_system_prompt(self, *messages: ChatCompletionMessage) -> 'ChatCompletionDescription':
+        first_messages = []
+        last_messages = list(self.messages)
+        
+        while last_messages:
+            message = last_messages[0]
+            
+            if isinstance(message, ChatCompletionMessage) and message.role == 'system':
+                first_messages.append(last_messages.pop(0))
+            else:
+                break
+        
+        return ChatCompletionDescription(first_messages + list(messages) + last_messages, self.__json_schema, self.__tools, self.__discussion_uuid)
+    
     def adding_message_after(self, *messages: ChatCompletionMessage | ChatCompletionTool.ChatCompletionToolResult) -> 'ChatCompletionDescription':
         return ChatCompletionDescription(list(self.__messages) + list(messages), self.__json_schema, self.__tools, self.__discussion_uuid)
     

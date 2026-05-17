@@ -53,7 +53,10 @@ if __name__ == '__main__':
         print()
         print("Waiting for all processes to stop...")
 
-        bots_registry.stop_all_chatbots()
+        # First stop all discussions (and their creators states)
         telegramProvider.stop_all_bots()
+        
+        # Then, you can stop the chatbots which simply don't do anything. 
+        bots_registry.stop_all_chatbots()
 
 

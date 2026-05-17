@@ -48,22 +48,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             self.__current_task.cancel()
 
     def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
-        messages = []
-        
-        for message in description.messages:
-            if isinstance(message, _interactions.ChatCompletionTool.ChatCompletionToolResult):
-                messages.append(_ollama.Message(role='assistant', tool_calls = [
-                    _ollama.Message.ToolCall(
-                        function=_ollama.Message.ToolCall.Function(
-                            name=message.tool_name,
-                            arguments=message.args
-                        )
-                    )
-                ]))
-                messages.append(_ollama.Message(role='tool', content=message.result))
-            else:
-                messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images]))
-
         if len(description.tools) > 0:
             tools = [
                 _ollama.Tool(
@@ -93,20 +77,44 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             
         if tools and description.json_schema:
             TOOLS_JSON_SCHEMA = {
+                'oneOf': [
+                    {
+                        'type': 'object',
+                        'properties': {
+                            'tool_name': {
+                                'type': 'string',
+                                'const': tool.name
+                            },
+                            'arguments': {
+                                'type': 'object',
+                                'properties': {
+                                    property_name: param.schema
+                                    for property_name, param in tool.parameters.items()
+                                }
+                            }
+                        },
+                        'required': [property_name for property_name, param in tool.parameters.items() if param.is_required],
+                        'additionalProperties': False
+                    }
+                    for tool in description.tools
+                ]
+            }
+            
+            llm_tools_json_schema = {
                 'type': 'object',
                 'properties': {
                     'tool_name': {
                         'type': 'string',
-                        'enum': [tool.name for tool in description.tools]
+                    'description': 'the name of the tool you need to call'
                     },
                     'arguments': {
-                        'type': 'object'
+                    'type': 'object',
+                    'description': 'the arguments provided to the tool'
                     }
                 },
                 'required': ['tool_name'],
-                'additionalProperties': False
             }
-
+            
             schema = {
                 'oneOf': [
                     description.json_schema,
@@ -114,10 +122,26 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 ]
             }
             
-            description = description.adding_message_before(_interactions.ChatCompletionMessage('system', 'To call a tool, you can use the following JSON Schema : \n' + _json.dumps(TOOLS_JSON_SCHEMA)))
+            description = description.adding_message_just_after_system_prompt(_interactions.ChatCompletionMessage('system', 'To call a tool, you can use the following JSON Schema : \n' + _json.dumps(llm_tools_json_schema)))
         else:
             schema = description.json_schema
         
+        messages = []
+        
+        for message in description.messages:
+            if isinstance(message, _interactions.ChatCompletionTool.ChatCompletionToolResult):
+                messages.append(_ollama.Message(role='assistant', tool_calls = [
+                    _ollama.Message.ToolCall(
+                        function=_ollama.Message.ToolCall.Function(
+                            name=message.tool_name,
+                            arguments=message.args
+                        )
+                    )
+                ]))
+                messages.append(_ollama.Message(role='tool', content=message.result))
+            else:
+                messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images]))
+
         async def chat() -> _interactions.ChatCompletionResult:
             self.__current_task = _asyncio.current_task()
             messages.copy()
