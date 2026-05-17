@@ -32,6 +32,11 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
     def has_unread_messages(self) -> bool:
         ...
     
+    @property
+    @_abc.abstractmethod
+    def tool_calls(self) -> _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        ...
+    
     @_abc.abstractmethod
     def mark_as_read(self) -> None:
         ...
@@ -39,7 +44,7 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
     @_abc.abstractmethod
     def add_message(self, message: messagesTypes) -> None:
         ...
-        
+    
     @_abc.abstractmethod
     def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
         ...
@@ -107,5 +112,55 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
     def get_context_prompt(self, specs: ChatbotSpecs) -> str:
         ...
     
+    @property
+    def mixed_messages_with_tool_calls(self) -> _T.Sequence[ChatbotMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        messages = list(self.messages)
+        tools_calls_messages = list(self.tool_calls)
+        tools_calls_messages.sort(key = lambda tool_call: tool_call.time)
+        
+        final_messages: list[ChatbotMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult] = []
+        
+        while messages and tools_calls_messages:
+            first_message = messages[0]
+            first_tool_call = tools_calls_messages[0]
+            
+            if first_message.time < first_tool_call.time:
+                final_messages.append(messages.pop(0))
+            else:
+                final_messages.append(tools_calls_messages.pop(0))
+            
+        for message in messages:
+            final_messages.append(message)
+            
+        for tool_call in tools_calls_messages:
+            final_messages.append(tool_call)
+        
+        return final_messages
+        
+    @property
+    def mixed_grouped_messages_with_tool_calls(self) -> _T.Sequence[_T.Sequence[ChatbotMessage] | _interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        messages = list(self.grouped_sender_messages)
+        tools_calls_messages = list(self.tool_calls)
+        tools_calls_messages.sort(key = lambda tool_call: tool_call.time)
+        
+        final_messages: list[_T.Sequence[ChatbotMessage] | _interactions.ChatCompletionTool.ChatCompletionToolResult] = []
+        
+        while messages and tools_calls_messages:
+            first_message = messages[0][0]
+            first_tool_call = tools_calls_messages[0]
+            
+            if first_message.time < first_tool_call.time:
+                final_messages.append(messages.pop(0))
+            else:
+                final_messages.append(tools_calls_messages.pop(0))
+            
+        for message in messages:
+            final_messages.append(message)
+            
+        for tool_call in tools_calls_messages:
+            final_messages.append(tool_call)
+        
+        return final_messages
+        
 
 

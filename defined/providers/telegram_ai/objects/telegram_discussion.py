@@ -52,6 +52,10 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         return self.__messages
     
     @property
+    def tool_calls(self) -> _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        return self.__directory.read_tool_calls()
+
+    @property
     def directory(self) -> TelegramDiscussionSaver:
         return self.__directory
     
@@ -266,6 +270,8 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         await current_message.edit_text(f"Calling tool {tool.name}...\n" + event_data)
 
     async def remove_tool_message(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
+        self.__directory.save_tool_call(result)
+        
         if self.current_tool_message is None:
             await self.prepare_tool_message(tool, result.args)
         
@@ -273,6 +279,8 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         assert current_message is not None
         
         await current_message.edit_text(f"{tool.name} action ended : \n" + result.result)
+        
+
     
 
 

@@ -1,10 +1,13 @@
 import saves as _saves
 import typing as _T
 import datetime as _datetime
+import interactions as _interactions
 
 import telegram as _telegram
 import json as _json
 import shutil as _shutil
+
+import uuid as _uuid
 
 from .message import TelegramMessageSaver
 
@@ -26,7 +29,7 @@ class TelegramDiscussionPropertiesSaver():
         return {
             'chat': _telegram.Chat.de_json(data['chat'], bot),
             'read': data['read'],
-            'current_tool_message': _telegram.Message.de_json(data['current_tool_message'], bot)
+            'current_tool_message': _telegram.Message.de_json(data['current_tool_message'], bot) if data['current_tool_message'] else None
         }
     
     def write_properties(self, chat: _telegram.Chat, read: bool, current_tool_message: _telegram.Message | None) -> None:
@@ -40,14 +43,27 @@ class TelegramDiscussionSaver():
     def __init__(self, directory: _saves.ResourcesDirectory) -> None:
         self.__directory = directory
         
-        self.__messages_directories = directory.get_directory('messages')
-
+        self.__tool_calls_directory = directory.get_directory('tool_calls')
+        
         self.__properties_saver = TelegramDiscussionPropertiesSaver(self.__directory.get_resource('properties.json'))
 
     @property
     def properties_saver(self) -> TelegramDiscussionPropertiesSaver:
         return self.__properties_saver
 
+    def read_tool_calls(self) -> _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]:
+        tools: list[_interactions.ChatCompletionTool.ChatCompletionToolResult] = []
+        
+        for filename in self.__tool_calls_directory.list_files():
+            file = _interactions.ToolCallSaveFile(self.__tool_calls_directory.get_resource(filename))
+            tools.append(file.read_tool_call())
+        
+        return tools
+    
+    def save_tool_call(self, tool_call: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
+        file = _interactions.ToolCallSaveFile(self.__tool_calls_directory.get_resource(_uuid.uuid4().hex+'.json'))
+        file.write_tool_call(tool_call)
+            
     def get_messages_savers(self) -> _T.Sequence[TelegramMessageSaver]:
         messages: list[tuple[int, TelegramMessageSaver]] = []
 

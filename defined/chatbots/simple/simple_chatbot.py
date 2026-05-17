@@ -25,7 +25,7 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
             _interactions.ChatCompletionMessage('system', self.__prompt.read_content() + ('' if json_schema in ('str', None) else "\n\nYou must respect the following JSON Schema:\n" + _json.dumps(json_schema)))
         ]
 
-        for message in self.mix_messages_with_tool_calls(discussion):
+        for message in discussion.mixed_messages_with_tool_calls:
             if isinstance(message, _interactions.ChatCompletionTool.ChatCompletionToolResult):
                 messages.append(message)
                 continue

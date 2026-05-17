@@ -92,25 +92,29 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             tools_directory = self.__directory
             
         if tools and description.json_schema:
+            TOOLS_JSON_SCHEMA = {
+                'type': 'object',
+                'properties': {
+                    'tool_name': {
+                        'type': 'string',
+                        'enum': [tool.name for tool in description.tools]
+                    },
+                    'arguments': {
+                        'type': 'object'
+                    }
+                },
+                'required': ['tool_name'],
+                'additionalProperties': False
+            }
+
             schema = {
                 'oneOf': [
                     description.json_schema,
-                    {
-                        'type': 'object',
-                        'properties': {
-                            'tool_name': {
-                                'type': 'string',
-                                'enum': [tool.name for tool in description.tools]
-                            },
-                            'arguments': {
-                                'type': 'object'
-                            }
-                        },
-                        'required': ['tool_name'],
-                        'additionalProperties': False
-                    }
+                    TOOLS_JSON_SCHEMA
                 ]
             }
+            
+            description = description.adding_message_before(_interactions.ChatCompletionMessage('system', 'To call a tool, you can use the following JSON Schema : \n' + _json.dumps(TOOLS_JSON_SCHEMA)))
         else:
             schema = description.json_schema
         
@@ -127,7 +131,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                     model=self.__model_name,
                     messages=messages,
                     options=self.__base_options,
-                    format=description.json_schema,
+                    format=schema,
                     think=False,
                     keep_alive=0,
                     tools=tools

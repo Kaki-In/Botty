@@ -77,7 +77,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
             _interactions.ChatCompletionMessage('system', "\n\n---\n\n".join((self.__prompt.read_content(), discussion.get_context_prompt(self.specs), "You must respect the following JSON Schema:\n" + _json.dumps(llm_json_schema))))
         ]
 
-        for grouped_messages in self.mix_grouped_messages_with_tool_calls(discussion):
+        for grouped_messages in discussion.mixed_grouped_messages_with_tool_calls:
             if isinstance(grouped_messages, _interactions.ChatCompletionTool.ChatCompletionToolResult):
                 messages.append(grouped_messages)
                 continue
