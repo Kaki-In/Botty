@@ -56,28 +56,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
     def get_messages_tools_json(self, description: _interactions.ChatCompletionDescription, runtime_tools_results: _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]) -> tuple[_T.Sequence[_ollama.Message], None | _T.Sequence[_ollama.Tool], _T.Any]:
         usable_tools = [tool for tool in description.tools if not (tool.is_ephemeral and tool.name in [result.tool_name for result in runtime_tools_results])]
 
-        if len(usable_tools) > 0:
-            tools = [
-                _ollama.Tool(
-                    function=_ollama.Tool.Function(
-                        name=tool.name,
-                        description=tool.description,
-                        parameters=_ollama.Tool.Function.Parameters(
-                            type='object',
-                            properties={
-                                name: param.schema
-                                for name, param in tool.parameters.items()
-                            },
-                            **{'$defs':None},
-                            required=[name for name, param in tool.parameters.items() if param.is_required]
-                        )
-                    )
-                ) for tool in usable_tools
-            ]
-        else:
-            tools = None
-
-        if tools and description.json_schema:
+        if usable_tools and description.json_schema:
             TOOLS_JSON_SCHEMA = {
                 'oneOf': [
                     {
@@ -144,6 +123,27 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 messages.append(_ollama.Message(role='tool', content=message.result))
             else:
                 messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images]))
+
+        if len(description.tools) > 0:
+            tools = [
+                _ollama.Tool(
+                    function=_ollama.Tool.Function(
+                        name=tool.name,
+                        description=tool.description,
+                        parameters=_ollama.Tool.Function.Parameters(
+                            type='object',
+                            properties={
+                                name: param.schema
+                                for name, param in tool.parameters.items()
+                            },
+                            **{'$defs':None},
+                            required=[name for name, param in tool.parameters.items() if param.is_required]
+                        )
+                    )
+                ) for tool in description.tools
+            ]
+        else:
+            tools = None
 
         return messages, tools, schema
 
