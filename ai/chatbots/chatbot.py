@@ -68,11 +68,11 @@ class Chatbot(_abc.ABC):
             
         raise ReferenceError("discussion not found")
     
-    def complete(self, messages: _interactions.ChatCompletionDescription, discussion: ChatbotDiscussion) -> str:
-        for modifier in self.__modifiers:
-            messages = modifier.modify_chat_completion(self.__specs, discussion, messages)
+    def complete(self, description: _interactions.ChatCompletionDescription, discussion: ChatbotDiscussion) -> str:
+        for modifier in reversed(self.__modifiers):
+            description = description.adding_editor_before(lambda description, m=modifier: print(m) or m.modify_chat_completion(self.__specs, discussion, description))
 
-        result = discussion.creators_state.create_from_factory(self.__specs.messages_creator, messages, self.__specs.configuration_directory.get_directory("main_chat_completion"))
+        result = discussion.creators_state.create_from_factory(self.__specs.messages_creator, description, self.__specs.configuration_directory.get_directory("main_chat_completion"))
         
         return result.result
     
