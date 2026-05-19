@@ -70,7 +70,7 @@ class Chatbot(_abc.ABC):
     
     def complete(self, description: _interactions.ChatCompletionDescription, discussion: ChatbotDiscussion) -> str:
         for modifier in reversed(self.__modifiers):
-            description = description.adding_editor_before(lambda description, m=modifier: print(m) or m.modify_chat_completion(self.__specs, discussion, description))
+            description = description.adding_editor_before(lambda description, m=modifier: m.modify_chat_completion(self.__specs, discussion, description))
 
         result = discussion.creators_state.create_from_factory(self.__specs.messages_creator, description, self.__specs.configuration_directory.get_directory("main_chat_completion"))
         
