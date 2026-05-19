@@ -2,7 +2,6 @@ import typing as _T
 import local_utils.images as _local_utils_images
 import saves as _saves
 import datetime as _datetime
-import interactions as _interactions
 import json as _json
 
 class ChatCompletionMessage():
@@ -214,7 +213,7 @@ class ToolCallSaveFile():
     def __init__(self, file: _saves.ResourceFile) -> None:
         self.__file = file
         
-    def write_tool_call(self, call: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
+    def write_tool_call(self, call: ChatCompletionTool.ChatCompletionToolResult) -> None:
         self.__file.write_content(_json.dumps({
             'tool_name': call.tool_name,
             'args': call.args,
@@ -222,10 +221,10 @@ class ToolCallSaveFile():
             'time': call.time.timestamp()
         }, indent=2))
         
-    def read_tool_call(self) -> _interactions.ChatCompletionTool.ChatCompletionToolResult:
+    def read_tool_call(self) -> ChatCompletionTool.ChatCompletionToolResult:
         data = _json.loads(self.__file.read_content())
         
-        return _interactions.ChatCompletionTool.ChatCompletionToolResult(
+        return ChatCompletionTool.ChatCompletionToolResult(
             _datetime.datetime.fromtimestamp(data['time'], _datetime.UTC), 
             data['tool_name'],
             data['args'],
