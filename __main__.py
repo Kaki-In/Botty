@@ -33,6 +33,7 @@ if __name__ == '__main__':
 
     # add discussion modifiers
     bots_registry.add_modifier_to_chatbots(TimeAwareChatbotModifier())
+    bots_registry.add_modifier_to_chatbots(DiscussionCutModifier())
     bots_registry.add_modifier_to_chatbots(ToolsInserterDiscussionModifier(  )) # add your custom tools here
 
     # Providers need to be stopped separately
