@@ -20,6 +20,7 @@ class _realistic_chatbot_configuration_object(_T.TypedDict):
     complete_cold_state_count: int
     min_relaunch_after_minutes: int
     relaunch_after_prob: float
+    never_force_answer: bool
 
 class RealisticChatbot(_ai_chatbots.Chatbot):
     def __init__(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
@@ -42,7 +43,8 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
             'max_waiting_seconds': 60,
             'complete_cold_state_count': 10,
             'min_relaunch_after_minutes': 1440,
-            'relaunch_after_prob': 0.01
+            'relaunch_after_prob': 0.01,
+            'never_force_answer': False
         })
 
     def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion[_ai_discussion.ChatbotMessage[_ai_discussion.ChatbotSender]], force: bool = False) -> None:
@@ -140,7 +142,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                     
                     try:
                         print(self.name, "answering to discussion", discussion)
-                        self.answer_to_discussion(discussion, force)
+                        self.answer_to_discussion(discussion, force and not configuration['never_force_answer'])
                         discussion.mark_as_read()
                         print(self.name, "answered to discussion")
                     except _interactions.InteractionInterruptionError:

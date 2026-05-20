@@ -53,10 +53,10 @@ class StableDiffusionImageGeneratorFactory(_interactions.CreatorFactory[_interac
     def build_from(self, directory: _saves.ResourcesDirectory) -> _interactions.Creator[_interactions.ImageSettings, _local_utils_images.Image]:
         configuration = StableDiffusionImageGeneratorConfiguration(directory)
 
-        return StableDiffusionImageGenerator(configuration.configuration_file.read_configuration(), _local_utils_images.long_from_bytes(configuration.face_resource.read_raw()))
+        return StableDiffusionImageGenerator(configuration.configuration_file.read_configuration(), _local_utils_images.long_from_bytes(configuration.face_resource.read_raw()) if configuration.face_resource.exists else None)
 
 class StableDiffusionImageGenerator(_interactions.Creator[_interactions.ImageSettings, _local_utils_images.Image]):
-    def __init__(self, base_configuration: _stable_diffusion_image_generation_configuration_file_object, face_image: _local_utils_images.Image) -> None:
+    def __init__(self, base_configuration: _stable_diffusion_image_generation_configuration_file_object, face_image: _T.Optional[_local_utils_images.Image]) -> None:
         super().__init__()
 
         self.__base_configuration = base_configuration
@@ -86,7 +86,7 @@ class StableDiffusionImageGenerator(_interactions.Creator[_interactions.ImageSet
                         "controlnet": {
                             "args": [
                                 {
-                                    "enabled": description.is_self_face,
+                                    "enabled": description.is_self_face and self.__face_image is not None,
                                     "module": self.__base_configuration['face']['module'],
                                     "model": self.__base_configuration['face']['model'],
                                     "weight": self.__base_configuration['face']['weight'],

@@ -156,13 +156,13 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         else:
             tools_directory = self.__directory
             
+        called_tools: list[_interactions.ChatCompletionTool.ChatCompletionToolResult] = []
         while True:
-            called_tools = list(description.last_tools_calls)
             edited_description = description.get_edited()
             
             tools_by_name = {tool.name: tool for tool in edited_description.tools}
             
-            messages, tools, schema = self.get_messages_tools_json(edited_description, called_tools)
+            messages, tools, schema = self.get_messages_tools_json(edited_description, description.last_tools_calls)
             
             self.raise_interruption_if_needed()
             
@@ -204,7 +204,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             for tool_call in message.tool_calls:
                 tool = tools_by_name[tool_call.function.name]
                 
-                if tool.name in [result.tool_name for result in called_tools] and tool.is_ephemeral:
+                if tool.name in [result.tool_name for result in description.last_tools_calls] and tool.is_ephemeral:
                     tool_result = _interactions.ChatCompletionTool.ChatCompletionToolResult(
                         _datetime.datetime.now(_datetime.UTC), 
                         tool.name, 

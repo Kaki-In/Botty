@@ -1,6 +1,5 @@
 import saves as _saves
 import typing as _T
-import datetime as _datetime
 import interactions as _interactions
 
 import telegram as _telegram

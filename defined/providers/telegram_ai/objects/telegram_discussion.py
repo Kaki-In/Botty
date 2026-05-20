@@ -12,6 +12,10 @@ import asyncio as _asyncio
 import json as _json
 import traceback as _traceback
 import html as _html
+import saves as _saves
+
+class _telegram_discussion_configuration_object(_T.TypedDict):
+    public_chats_only_answer_to_mentions: bool
 
 class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbotMessage]):
     def __init__(self, message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], loop: _asyncio.AbstractEventLoop, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, bot: _telegram.Bot, directory: TelegramDiscussionSaver) -> None:
@@ -127,7 +131,11 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
                 print("Could not handle message", update.effective_message)
             return False
         
-        if update.effective_chat.type != _telegram_constants.ChatType.PRIVATE and not message_method.is_for_me(update.effective_message):
+        config = _saves.ConfigurationFile[_telegram_discussion_configuration_object](specs.directory.get_directory('telegram').get_directory('conf').get_resource('discussions.json'), {
+            'public_chats_only_answer_to_mentions': True
+        }).read_configuration()
+        
+        if update.effective_chat.type != _telegram_constants.ChatType.PRIVATE and config['public_chats_only_answer_to_mentions'] and not message_method.is_for_me(update.effective_message):
             return False
         
         message_saver = self.__directory.get_message_saver(update.effective_message)
