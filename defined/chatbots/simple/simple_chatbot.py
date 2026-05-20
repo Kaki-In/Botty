@@ -22,7 +22,7 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
         json_schema = discussion.get_json_schema()
 
         messages: list[_interactions.ChatCompletionMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult] = [
-            _interactions.ChatCompletionMessage('system', self.__prompt.read_content() + ('' if json_schema in ('str', None) else "\n\nYou must respect the following JSON Schema:\n" + _json.dumps(json_schema)))
+            _interactions.ChatCompletionMessage('system', discussion.get_json_description_for_llm())
         ]
 
         for message in discussion.mixed_messages_with_tool_calls:

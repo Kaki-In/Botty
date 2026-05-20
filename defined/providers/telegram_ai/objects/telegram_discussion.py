@@ -170,30 +170,21 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
             ]
         }
 
-    def get_json_schema_for_llm(self) -> _T.Any:
-        return {
-            'oneOf': [
-                {
-                    'type': 'object',
-                    'properties': {
-                        'type': {
-                            'type': 'string',
-                            'const': message_method.class_get_messages_typename()
-                        },
-                        'data': message_method.class_get_json_schema_for_llm(),
-#                        'replying_to_old_message': {
-#                            'type': ['integer', 'null'],
-#                            'description': "(Optional) The identifier of a message to respond to, when clearly needed. Should stay unset or set to null most of the time.",
-#                            'enum': [message.telegram_message.id for message in self.messages] + [None]
-#                        }
-
-                    },
-                    'required': ['type', 'data']
-                }
-                for message_method in self.message_methods
-            ]
-        }
-
+    def get_json_description_for_llm(self) -> str:
+        a = (
+            "The messages structure are an object containing the following keys :\n" \
+            '- "type" : the type of the message to send \n' \
+            '- "data" : the data of the message (depending the message type)\n\n' \
+            "You can reply by a message from any of these types:\n"
+        )
+        
+        for message_method in self.message_methods:
+            a += f"- {message_method}: \n{message_method.class_get_json_description_for_llm()}\n\n"
+            
+        a += 'You can also include a message identifier to reply to if needded, under the key "replying_to_old_message".'
+        
+        return a
+    
     def add_message_from_llm_response(self, specs: _ai_chatbot_data.ChatbotSpecs, response: str) -> None:
         self.current_tool_message = None
         

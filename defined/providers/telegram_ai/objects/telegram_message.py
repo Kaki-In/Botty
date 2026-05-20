@@ -59,7 +59,7 @@ class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender
     
     @classmethod
     @_abc.abstractmethod
-    def class_get_json_schema_for_llm(cls) -> _T.Any:
+    def class_get_json_description_for_llm(cls) -> str:
         ...
     
     @classmethod

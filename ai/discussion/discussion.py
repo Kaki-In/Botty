@@ -84,7 +84,7 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
         ...
     
     @_abc.abstractmethod
-    def get_json_schema_for_llm(self) -> _T.Any:
+    def get_json_description_for_llm(self) -> str:
         ...
     
     @_abc.abstractmethod

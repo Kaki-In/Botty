@@ -30,20 +30,8 @@ class TelegramChatbotImageMessage(TelegramChatbotMessage, name="image"):
         }
 
     @classmethod
-    def class_get_json_schema_for_llm(cls) -> _T.Any:
-        return {
-            'type': 'object',
-            'properties': {
-                'deep_image_description': {
-                    'type': 'string',
-                    'description': 'a highly detailed description of the image. Should only be factual and contain visual facts. When you are the main character, you must mention it. '
-                },
-                'caption': {
-                    'type': 'string',
-                    'description': "the text to provide under the image."
-                }
-            }
-        }
+    def class_get_json_description_for_llm(cls) -> str:
+        return 'Generates and includes an image from its description. Example : {"type": "image", "data": {"deep_image_description": "a man walking in space", "caption": "Look ! "}}. '
 
     @classmethod
     def class_get_description(cls) -> str:

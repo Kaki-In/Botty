@@ -36,11 +36,9 @@ class TelegramChatbotTextualMessage(TelegramChatbotMessage, name="text"):
         }
     
     @classmethod
-    def class_get_json_schema_for_llm(cls):
-        return {
-            'type': 'string',
-            'description': 'The content to write as a single text message.'
-        }
+    def class_get_json_description_for_llm(cls) -> str:
+        return 'Sends a simple raw text. Example : {"type": "text", "data": "Hello!"}'
+
     
     @classmethod
     async def load_from_llm(cls, chat: _telegram.Chat, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_telegram.Message, _T.Any]:

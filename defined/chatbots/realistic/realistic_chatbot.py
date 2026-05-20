@@ -48,7 +48,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
     def answer_to_discussion(self, discussion: _ai_discussion.ChatbotDiscussion[_ai_discussion.ChatbotMessage[_ai_discussion.ChatbotSender]], force: bool = False) -> None:
         json_schema = discussion.get_json_schema()
 
-        if json_schema in ('str', None):
+        if not json_schema:
             final_json_schema = {
                 'type': 'array',
                 'items': {
@@ -56,7 +56,8 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                 },
                 'description': 'a json list of all messages to send. You should use distinct messages separating your ideas.'
             }
-            llm_json_schema = final_json_schema
+
+            llm_json_description = "Your output must be a JSON array containing all your answers, as strings. "
         else:
             final_json_schema = {
                 'type': 'array',
@@ -64,17 +65,13 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                 'description': 'a json list of all messages to send. You should use distinct messages separating your ideas.'
             }
 
-            llm_json_schema = {
-                'type': 'array',
-                'items': discussion.get_json_schema_for_llm(),
-                'description': 'a json list of all messages to send. You should use distinct messages separating your ideas.'
-            }
-
+            llm_json_description = "Your output must be a JSON array containing all your answers, following these rules : \n" + discussion.get_json_description_for_llm()
+            
         if force:
             final_json_schema['minItems'] = 1
 
         messages: list[_interactions.ChatCompletionMessage | _interactions.ChatCompletionTool.ChatCompletionToolResult] = [
-            _interactions.ChatCompletionMessage('system', "\n\n---\n\n".join((self.__prompt.read_content(), discussion.get_context_prompt(self.specs), "You must respect the following JSON Schema:\n" + _json.dumps(llm_json_schema))))
+            _interactions.ChatCompletionMessage('system', "\n\n---\n\n".join((self.__prompt.read_content(), discussion.get_context_prompt(self.specs), llm_json_description)))
         ]
 
         for grouped_messages in discussion.mixed_grouped_messages_with_tool_calls:

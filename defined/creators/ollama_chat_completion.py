@@ -56,6 +56,27 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
     def get_messages_tools_json(self, description: _interactions.ChatCompletionDescription, runtime_tools_results: _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]) -> tuple[_T.Sequence[_ollama.Message], None | _T.Sequence[_ollama.Tool], _T.Any]:
         usable_tools = [tool for tool in description.tools if not (tool.is_ephemeral and tool.name in [result.tool_name for result in runtime_tools_results])]
 
+        if len(description.tools) > 0:
+            tools = [
+                _ollama.Tool(
+                    function=_ollama.Tool.Function(
+                        name=tool.name,
+                        description=tool.description,
+                        parameters=_ollama.Tool.Function.Parameters(
+                            type='object',
+                            properties={
+                                name: param.schema
+                                for name, param in tool.parameters.items()
+                            },
+                            **{'$defs':None},
+                            required=[name for name, param in tool.parameters.items() if param.is_required]
+                        )
+                    )
+                ) for tool in description.tools
+            ]
+        else:
+            tools = None
+
         if usable_tools and description.json_schema:
             TOOLS_JSON_SCHEMA = {
                 'oneOf': [
@@ -105,7 +126,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 ]
             }
             
-            description = description.adding_message_just_after_system_prompt(_interactions.ChatCompletionMessage('system', 'To call a tool, you can use the following JSON Schema : \n' + _json.dumps(llm_tools_json_schema)))
+            description = description.adding_message_just_after_system_prompt(_interactions.ChatCompletionMessage('system', 'To call a tool, you can directly use the following JSON Schema : \n' + _json.dumps(llm_tools_json_schema) + "\n\nValid tools are : " + ', '.join([_json.dumps(tool.name) for tool in usable_tools])))
         else:
             schema = description.json_schema
         
@@ -124,27 +145,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 messages.append(_ollama.Message(role='tool', content=message.result))
             else:
                 messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images]))
-
-        if len(description.tools) > 0:
-            tools = [
-                _ollama.Tool(
-                    function=_ollama.Tool.Function(
-                        name=tool.name,
-                        description=tool.description,
-                        parameters=_ollama.Tool.Function.Parameters(
-                            type='object',
-                            properties={
-                                name: param.schema
-                                for name, param in tool.parameters.items()
-                            },
-                            **{'$defs':None},
-                            required=[name for name, param in tool.parameters.items() if param.is_required]
-                        )
-                    )
-                ) for tool in description.tools
-            ]
-        else:
-            tools = None
 
         return messages, tools, schema
 
