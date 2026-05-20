@@ -9,6 +9,10 @@ import telegram.constants as _telegram_constants
 import typing as _T
 import local_utils.images as _local_utils_images
 import saves as _saves
+import datetime as _datetime
+
+class _telegram_messages_configuration_object(_T.TypedDict):
+    utc: tuple[int, int] | list[int]
 
 class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender], _abc.ABC):
     @classmethod
@@ -108,12 +112,16 @@ class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender
         return self.__message.reply_to_message.id
     
     def export_to_llm(self, specs: _ai_chatbot_data.ChatbotSpecs, images: list[_local_utils_images.Image]) -> _T.Any:
+        config = _saves.ConfigurationFile[_telegram_messages_configuration_object](specs.directory.get_directory('telegram').get_directory('conf').get_resource('messages.json'), {
+            'utc': [0, 0]
+        }).read_configuration()
+        
         data = {
             'message_id': self.telegram_message.id,
             'type': self.class_get_messages_typename(),
             'data': self.export_data_to_llm(specs, images),
             'sender': self.sender.export_to_llm(),
-            'date': self.time.strftime("%A %d/%m/%Y, %H:%M")
+            'date': self.time.astimezone(_datetime.timezone(_datetime.timedelta(hours=config['utc'][0], minutes=config['utc'][1]))).strftime("%A %d/%m/%Y, %H:%M")
         }
 
         if self.__message.reply_to_message is not None:

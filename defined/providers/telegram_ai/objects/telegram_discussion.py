@@ -179,7 +179,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         )
         
         for message_method in self.message_methods:
-            a += f"- {message_method}: \n{message_method.class_get_json_description_for_llm()}\n\n"
+            a += f"- {message_method.class_get_messages_typename()}: \n{message_method.class_get_json_description_for_llm()}\n\n"
             
         a += 'You can also include a message identifier to reply to if needded, under the key "replying_to_old_message".'
         
