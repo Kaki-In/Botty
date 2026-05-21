@@ -56,7 +56,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
     def get_messages_tools_json(self, description: _interactions.ChatCompletionDescription, runtime_tools_results: _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]) -> tuple[_T.Sequence[_ollama.Message], None | _T.Sequence[_ollama.Tool], _T.Any]:
         usable_tools = [tool for tool in description.tools if not (tool.is_ephemeral and tool.name in [result.tool_name for result in runtime_tools_results])]
 
-        if len(description.tools) > 0:
+        if len(usable_tools) > 0:
             tools = [
                 _ollama.Tool(
                     function=_ollama.Tool.Function(
@@ -72,7 +72,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                             required=[name for name, param in tool.parameters.items() if param.is_required]
                         )
                     )
-                ) for tool in description.tools
+                ) for tool in usable_tools
             ]
         else:
             tools = None
@@ -151,7 +151,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             else:
                 messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images]))
 
-        return messages, tools, schema
+        return messages, tools or None, schema
 
     async def chat(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
         self.__current_task = _asyncio.current_task()
