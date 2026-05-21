@@ -150,8 +150,50 @@ class ChatCompletionDescription():
     def get_edited(self) -> 'ChatCompletionDescription':
         return self.__discussion_editor(self)
     
-    def removing_messages(self, count_before: int = 0, count_after: int = 0) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages[count_before:-count_after], self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
+    def removing_messages(self, count_before=0, count_after=0, skip_systems=False) -> 'ChatCompletionDescription':
+        returned_messages = list(self.__messages)
+        
+        removed_before = 0
+        
+        for message in returned_messages.copy():
+            if removed_before == count_before:
+                break
+       
+            if isinstance(message, ChatCompletionMessage) and message.role == 'system' and skip_systems:
+                continue
+            
+            removed_before += 1
+            returned_messages.pop(0)
+            
+        removed_after = 0
+        for message in reversed(returned_messages.copy()):
+            if removed_after == count_after:
+                break
+            
+            if isinstance(message, ChatCompletionMessage) and message.role == 'system' and skip_systems:
+                continue
+            
+            removed_after += 1
+            returned_messages.pop(-1)
+        
+        return ChatCompletionDescription(returned_messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
+    
+    def keeping_last_messages(self, count: int, skip_systems=False) -> 'ChatCompletionDescription':
+        returned_messages: list[ChatCompletionMessage | ChatCompletionTool.ChatCompletionToolResult] = []
+        
+        kept_after = 0
+        for message in reversed(self.__messages):
+            if kept_after == count:
+                break
+            
+            returned_messages.insert(0, message)
+            
+            if isinstance(message, ChatCompletionMessage) and message.role == 'system' and skip_systems:
+                continue
+            
+            kept_after += 1
+        
+        return ChatCompletionDescription(returned_messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
     
     def adding_message_before(self, *messages: ChatCompletionMessage | ChatCompletionTool.ChatCompletionToolResult) -> 'ChatCompletionDescription':
         return ChatCompletionDescription(list(messages) + list(self.__messages), self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)

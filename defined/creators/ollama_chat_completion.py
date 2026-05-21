@@ -104,19 +104,10 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             }
             
             llm_tools_json_schema = {
-                'type': 'object',
-                'properties': {
-                    'tool_name': {
-                        'type': 'string',
-                        'description': 'the name of the tool you need to call'
-                    },
-                    'arguments': {
-                        'type': 'object',
-                        'description': 'the arguments provided to the tool'
-                    }
-                },
-                'required': ['tool_name'],
-                'additionalProperties': False
+                'tool_name': "<the name of the tool to call>",
+                'arguments': {
+                    "<keys>": "<some values>"
+                }
             }
 
             schema = {
@@ -126,7 +117,19 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 ]
             }
             
-            description = description.adding_message_just_after_system_prompt(_interactions.ChatCompletionMessage('system', 'To call a tool, you can directly use the following JSON Schema : \n' + _json.dumps(llm_tools_json_schema) + "\n\nValid tools are : " + ', '.join([_json.dumps(tool.name) for tool in usable_tools])))
+            description = description.adding_message_just_after_system_prompt(_interactions.ChatCompletionMessage(
+                'system',
+                'To call a tool, you can directly use the following JSON structure : \n' + _json.dumps(llm_tools_json_schema) + "\n\n" \
+                "Here is a list of all tools :\n" \
+                '' + '\n\n'.join([
+                    f'{_json.dumps(tool.name)}: {tool.description or ""}\n' \
+                    f"Parameters: \n" + '\n-'.join([
+                        f'{_json.dumps(name)} {": " + param.schema["description"] if "description" in param.schema else ""}'
+                        for name, param in tool.parameters.items()
+                    ])
+                    for tool in usable_tools
+                ])
+            ))
             
             tools = None
         else:

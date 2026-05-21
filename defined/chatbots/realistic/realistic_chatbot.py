@@ -59,7 +59,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                 'description': 'a json list of all messages to send. You should use distinct messages separating your ideas.'
             }
 
-            llm_json_description = "Your output must be a JSON array containing all your answers, as strings. "
+            llm_json_description = "Your output must be a JSON array [] containing all your answers, as strings. "
         else:
             final_json_schema = {
                 'type': 'array',
@@ -67,7 +67,7 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                 'description': 'a json list of all messages to send. You should use distinct messages separating your ideas.'
             }
 
-            llm_json_description = "Your output must be a JSON array containing all your answers, following these rules : \n" + discussion.get_json_description_for_llm()
+            llm_json_description = "Your output must be a JSON array [] containing all your answers separated by commas, following these rules : \n" + discussion.get_json_description_for_llm()
             
         if force:
             final_json_schema['minItems'] = 1

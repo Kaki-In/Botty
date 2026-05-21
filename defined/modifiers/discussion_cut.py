@@ -18,6 +18,6 @@ class DiscussionCutModifier(_ai_discussion.ChatbotDiscussionModifier):
     def modify_chat_completion(self, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionDescription:
         last_interaction_count = self.get_configuration_for(specs)['last_interactions_count']
 
-        return description.removing_messages(count_before=len(discussion.messages)-last_interaction_count)
+        return description.keeping_last_messages(last_interaction_count, skip_systems=True)
 
 
