@@ -119,7 +119,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             
             description = description.adding_message_just_after_system_prompt(_interactions.ChatCompletionMessage(
                 'system',
-                'To call a tool, you can directly use the following JSON structure : \n' + _json.dumps(llm_tools_json_schema) + "\n\n" \
+                'To call a tool instead of answering, you can directly use the following JSON structure, instead of the other one : \n' + _json.dumps(llm_tools_json_schema) + ". It will be automatically converted to a tool call\n\n" \
                 "Here is a list of all tools :\n" \
                 '' + '\n\n'.join([
                     f'{_json.dumps(tool.name)}: {tool.description or ""}\n' \
