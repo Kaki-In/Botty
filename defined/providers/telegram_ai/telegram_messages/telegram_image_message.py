@@ -76,9 +76,11 @@ class TelegramChatbotImageMessage(TelegramChatbotMessage, name="image"):
         image_file.write_raw(photo_file.getvalue())
 
         image = await _local_utils_images.from_bytes(photo_file.getvalue())
-        description = await creators.async_create_under_state(creators_state, image, _local_utils_images.Image, str, cls.get_bot_tg_configuration(specs).get_directory('image_description'))
-    
+
         description_file = directory.get_resource('description.txt')
+        description_file.write_content("Image description not available yet")
+        
+        description = await creators.async_create_under_state(creators_state, image, _local_utils_images.Image, str, cls.get_bot_tg_configuration(specs).get_directory('image_description'))
         description_file.write_content(description)
 
         return cls(message, directory)

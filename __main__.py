@@ -20,9 +20,15 @@ if __name__ == '__main__':
     ollama_creator_factory = OllamaChatCompletorFactory()
 
     # The Telegram Messages used
-    message_methods = [
+    telegram_message_methods = [
         TelegramChatbotImageMessage,
         TelegramChatbotTextualMessage
+    ]
+
+    # The Discord Messages used
+    discord_message_methods = [
+        DiscordChatbotImageMessage,
+        DiscordChatbotTextualMessage
     ]
 
     # Starting all bots
@@ -37,18 +43,26 @@ if __name__ == '__main__':
     bots_registry.add_modifier_to_chatbots(ToolsInserterDiscussionModifier(  )) # add your custom tools here
 
     # Providers need to be stopped separately
-    telegramProvider = MainTelegramBotsHandler(*message_methods)
+    telegramProvider = MainTelegramBotsHandler(*telegram_message_methods)
+    discordProvider = MainDiscordBotsHandler(*discord_message_methods)
+    
     bots_registry.add_provider_to_chatbots(telegramProvider)
+    bots_registry.add_provider_to_chatbots(discordProvider)
 
     # All conversions that can be operated during the discussion for telegram bots. 
     telegramProvider.add_creator_factory(FullImageGeneratorFactory(AIPromptGeneratorFactory(ollama_creator_factory), StableDiffusionImageGeneratorFactory()), str, local_utils.images.Image)
     telegramProvider.add_creator_factory(ImageDescriptorFactory(ollama_creator_factory), local_utils.images.Image, ChatCompletionResult)
     telegramProvider.add_creator_factory(SimplySleepCreatorFactory(), float, Sleepy)
     
+    discordProvider.add_creator_factory(FullImageGeneratorFactory(AIPromptGeneratorFactory(ollama_creator_factory), StableDiffusionImageGeneratorFactory()), str, local_utils.images.Image)
+    discordProvider.add_creator_factory(ImageDescriptorFactory(ollama_creator_factory), local_utils.images.Image, ChatCompletionResult)
+    discordProvider.add_creator_factory(SimplySleepCreatorFactory(), float, Sleepy)
+    
     # Start bots
     bots_registry.start_all_chatbots()
     
     try:
+        print("Waiting...")
         threading.Event().wait()
     except KeyboardInterrupt:
         print()
@@ -56,6 +70,8 @@ if __name__ == '__main__':
 
         # First stop all discussions (and their creators states)
         telegramProvider.stop_all_bots()
+
+        discordProvider.stop_all_bots()
         
         # Then, you can stop the chatbots which simply don't do anything. 
         bots_registry.stop_all_chatbots()

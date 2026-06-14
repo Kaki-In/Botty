@@ -1,2 +1,5 @@
 from .telegram_ai.handlers import MainTelegramBotsHandler
 from .telegram_ai.telegram_messages import TelegramChatbotTextualMessage, TelegramChatbotImageMessage
+
+from .discord_ai.handlers import MainDiscordBotsHandler
+from .discord_ai.discord_messages import DiscordChatbotTextualMessage, DiscordChatbotImageMessage

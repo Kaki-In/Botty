@@ -9,7 +9,7 @@ class TelegramActionWaiting():
         self.__action = action
     
     async def main_action(self) -> None:
-        i=0
+        i=8
         while not self.__should_stop:
             if i == 8:
                 i = 0
