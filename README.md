@@ -43,9 +43,11 @@ Then run with Python
 
 ## Contributing
 
-If you want to contribute, please considere that for the moment I am alone to 
+If you want to contribute, please considere that for the moment I am alone to manage this project. 
 
-You can contribute by adding 4 kinds of objects : 
+One big need of the contribution is about configuration, which only stands for a `.botty` directory for the moment, and a construction in `__main__.py`. 
+
+You can also contribute by adding 4 kinds of objects : 
 
 ### Discussions Providers
 
