@@ -110,7 +110,6 @@ class DiscordBotHandler():
         assert self.__client.user
         
         for guild in self.__client.guilds:
-            print(guild)
             await self.__tree.sync(guild=guild)
             
         await self.__client.user.edit(username=self.__client.user.name)
