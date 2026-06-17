@@ -48,8 +48,8 @@ class TelegramChatbotMessage(_ai_discussion.ChatbotMessage[TelegramChatbotSender
                 if e.type == "mention" and entity_text.lower() == bot_user_mention:
                     return True
 
-                if e.type == "text_mention":
-                    return True  # bot est explicitement ciblé
+                if e.type == "text_mention" and e.user and e.user.id == bot_user.id:
+                    return True
 
                 if e.type == "bot_command" and entity_text.lower().endswith(bot_user_mention):
                     return True
