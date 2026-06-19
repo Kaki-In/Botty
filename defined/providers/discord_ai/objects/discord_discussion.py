@@ -154,6 +154,12 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
                 {
                     'type': 'object',
                     'properties': {
+                        "replying_to_old_message": {
+                            'type': 'integer',
+                            'enum': [
+                                message.discord_message.id for message in self.messages
+                            ],
+                        },
                         'type': {
                             'type': 'string',
                             'const': message_method.class_get_messages_typename()
@@ -184,7 +190,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
 
     def add_message_from_llm_response(self, specs: _ai_chatbot_data.ChatbotSpecs, response: str) -> None:
         self.current_tool_message = None
-
+        
         data = _json.loads(response)
         assert isinstance(data, dict)
 

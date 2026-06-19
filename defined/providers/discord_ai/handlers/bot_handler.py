@@ -33,10 +33,6 @@ class DiscordBotHandler():
         intents.members = True
         self.__client = _discord.Client(intents=intents)
 
-        self.__client.event(self.on_ready)
-        self.__client.event(self.on_message)
-        self.__client.event(self.on_message_edit)
-
         self.__tree = _discord.app_commands.CommandTree(self.__client)
         
         @self.__tree.command(name="forget", description="Efface la discussion")
@@ -51,6 +47,10 @@ class DiscordBotHandler():
             await interaction.response.send_message("Discussion oubliée.", ephemeral=True)
                 
         self.__thread = _threading.Thread(target=self.__run)
+
+        self.__client.event(self.on_ready)
+        self.__client.event(self.on_message)
+        self.__client.event(self.on_message_edit)
 
         if directly_start:
             self.start()
@@ -109,9 +109,7 @@ class DiscordBotHandler():
     async def on_ready(self):
         assert self.__client.user
         
-        for guild in self.__client.guilds:
-            await self.__tree.sync(guild=guild)
-            
+        await self.__tree.sync()
         await self.__client.user.edit(username=self.__client.user.name)
         print(f'Logged in as {self.__client.user}')
         

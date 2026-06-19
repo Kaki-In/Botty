@@ -67,8 +67,14 @@ class DiscordChatbotTextualMessage(DiscordChatbotMessage, name="text"):
                 sleeper_directory
             )
 
-        reference = _discord.MessageReference(message_id=answer_to, channel_id=channel.id) if answer_to else None
-        return await channel.send(data, reference=reference), None # type: ignore
+        if answer_to:
+            reference = _discord.MessageReference(message_id=answer_to, channel_id=channel.id)
+            
+            new_message = await channel.send(data, reference=reference)
+        else:
+            new_message = await channel.send(data)
+            
+        return new_message, None
 
     def export_data_to_llm(self, specs: _ai_chatbot_data.ChatbotSpecs, images: list[_local_utils_images.Image]):
         return self.discord_message.content
