@@ -47,7 +47,7 @@ If you want to contribute, please considere that for the moment I am alone to ma
 
 One big need of the contribution is about configuration, which only stands for a `.botty` directory for the moment, and a construction in `__main__.py`. 
 
-You can also contribute by adding 4 kinds of objects : 
+You can also contribute by adding 5 kinds of objects : 
 
 ### Discussions Providers
 
@@ -69,6 +69,10 @@ Creators can be called at any time from any object, although they should be call
 ### Discussions Modifiers
 
 Discussions modifiers can modify a discussion completion (e.g. adding messages, modifying some of them, specifying current time, adding tools). 
+
+### Tools
+
+Tools can be called by the LLMs to perform actions during their answering process. 
 
 ---
 

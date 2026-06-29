@@ -156,11 +156,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
     async def chat(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
         self.__current_task = _asyncio.current_task()
         
-        if description.discussion_uuid:
-            tools_directory = self.__directory.get_directory('discussion_' + description.discussion_uuid)
-        else:
-            tools_directory = self.__directory
-            
         called_tools: list[_interactions.ChatCompletionTool.ChatCompletionToolResult] = []
         while True:
             edited_description = description.get_edited()
@@ -217,8 +212,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                         "You cannot call this tool twice. Please now answer to the user. "
                     )
                 else:
-                    tool_directory = tools_directory.get_directory(tool.name)
-                    
                     try:
                         if description.tools_advancement_follower:
                             advancement_follower = description.tools_advancement_follower
@@ -228,7 +221,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                         else:
                             state_callback = lambda state: None
                         
-                        result = tool.callable(tool_directory, state_callback, **tool_call.function.arguments)
+                        result = tool.callable(state_callback, **tool_call.function.arguments)
                     except Exception as exc:
                         result = 'An error occured: ' + type(exc).__name__ + ": " + str(exc)
                         

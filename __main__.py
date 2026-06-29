@@ -36,11 +36,15 @@ if __name__ == '__main__':
     for directory in HOME_DIRECTORY.list_directories():
         bot = RealisticChatbot(directory, ChatbotSpecs(HOME_DIRECTORY.get_directory(directory), ollama_creator_factory))
         bots_registry.add_chatbot(bot)
-
+        
     # add discussion modifiers
     bots_registry.add_modifier_to_chatbots(TimeAwareChatbotModifier())
     bots_registry.add_modifier_to_chatbots(DiscussionCutModifier())
     bots_registry.add_modifier_to_chatbots(ToolsInserterDiscussionModifier(  )) # add your custom tools here
+    
+    ollama_embedder_factory = OllamaEmbedderFactory()
+    query_factory = MemoryQueryCreatorFactory(ollama_creator_factory)
+    bots_registry.add_modifier_to_chatbots(ChatbotMemoryDiscussionModifier(GlobalChatbotMemoryFactory(ollama_embedder_factory), CreatorsState(), query_factory, 'knowledge', "Use this memory for any general knowledge"))
 
     # Providers need to be stopped separately
     telegramProvider = MainTelegramBotsHandler(*telegram_message_methods)

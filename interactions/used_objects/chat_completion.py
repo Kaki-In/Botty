@@ -24,7 +24,7 @@ class ChatCompletionMessage():
 
 class ChatCompletionTool():
     class ToolCallable(_T.Protocol):
-        def __call__(self, directory: _saves.ResourcesDirectory, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str: ...
+        def __call__(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str: ...
         
     class ChatCompletionToolResult():
         def __init__(self, time: _datetime.datetime, tool_name: str, args: _T.Mapping[str, _T.Any], result: str) -> None:
