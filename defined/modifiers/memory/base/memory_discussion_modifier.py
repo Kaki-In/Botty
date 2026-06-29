@@ -47,6 +47,9 @@ class ChatbotMemoryDiscussionModifier(_ai_discussion.ChatbotDiscussionModifier):
         elements = memory.remember_from(self.get_relevant_memory_query(specs, discussion))
         tool = ChatbotMemoryTool(self.__name, memory, self.__description)
         
+        if not elements:
+            return description.adding_tools(tool)
+        
         return (
             description
                 .adding_message_after(
