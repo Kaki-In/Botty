@@ -10,7 +10,7 @@ class ChatbotMemoryTool(_interactions.ChatCompletionTool, _abc.ABC):
                          sentence_data = _interactions.ChatCompletionTool.Parameter({
                             'type': 'string',
                             'description': 'What should be remembered',
-                            'pattern': pattern
+                            'pattern': '^' + pattern + '$'
                          }, True),
                          context = _interactions.ChatCompletionTool.Parameter({
                              'type': 'object',
