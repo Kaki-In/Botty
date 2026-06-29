@@ -36,12 +36,11 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
 
         self.__client = client
 #        client.chat(model_name, options=base_options)
-        self.__directory = directory
 
         self.__model_name = model_name
         self.__base_options = base_options
         self.__current_task: _asyncio.Task | None = None
-        self.__loop = _asyncio.new_event_loop()
+        self.__loop = _asyncio.get_event_loop()
 
     def on_interruption(self) -> None:
         if self.__current_task is not None:
@@ -49,7 +48,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
 
     def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
         try:
-            return _asyncio.run_coroutine_threadsafe(self.chat(description), self.__loop).result()
+            return self.__loop.run_until_complete(self.chat(description))
         except (_httpx.CloseError, _asyncio.CancelledError):
             raise _interactions.InteractionInterruptionError()
     
