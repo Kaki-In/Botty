@@ -10,7 +10,7 @@ class _vector_based_memory_configuration_object(_T.TypedDict):
 
 class ChatbotVectorBasedMemory(ChatbotMemory, _abc.ABC):
     def __init__(self, name: str, directory: _saves.ResourcesDirectory, state: _interactions.CreatorsState, embedder_factory: _interactions.CreatorFactory[str, _interactions.EmbeddingVector]) -> None:
-        super().__init__(name)
+        ChatbotMemory.__init__(self, name)
         
         self.__directory = directory
         

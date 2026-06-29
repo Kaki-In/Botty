@@ -16,7 +16,7 @@ class _chatbot_directory_based_memory_configuration_object(_T.TypedDict):
 
 class ChatbotDirectoryBasedMemory(ChatbotMemory, _abc.ABC):
     def __init__(self, name: str, directory: _saves.ResourcesDirectory) -> None:
-        super().__init__(name)
+        ChatbotMemory.__init__(self, name)
         
         self.__directory = directory
 
