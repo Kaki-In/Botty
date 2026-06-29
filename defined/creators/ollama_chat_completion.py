@@ -6,6 +6,7 @@ import ollama as _ollama
 import saves as _saves
 import datetime as _datetime
 import asyncio as _asyncio
+import threading as _threading
 
 class _ollama_file_configuration_object(_T.TypedDict):
     hostname: str
@@ -40,15 +41,29 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         self.__model_name = model_name
         self.__base_options = base_options
         self.__current_task: _asyncio.Task | None = None
-        self.__loop = _asyncio.get_event_loop()
+        self.__loop = _asyncio.new_event_loop()
+
+        self.thread = _threading.Thread(target=self._start_loop, daemon=True)
+        self.thread.start()
+
+    def _start_loop(self):
+        _asyncio.set_event_loop(self.__loop)
+        self.__loop.run_forever()
 
     def on_interruption(self) -> None:
         if self.__current_task is not None:
             self.__current_task.cancel()
-
+            
+    def on_finish(self) -> None:
+        if self.__loop.is_running():
+            self.__loop.call_soon_threadsafe(self.__loop.stop)
+            self.thread.join()
+            
+        self.__loop.close()
+        
     def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
         try:
-            return self.__loop.run_until_complete(self.chat(description))
+            return _asyncio.run_coroutine_threadsafe(self.chat(description), self.__loop).result()
         except (_httpx.CloseError, _asyncio.CancelledError):
             raise _interactions.InteractionInterruptionError()
     
