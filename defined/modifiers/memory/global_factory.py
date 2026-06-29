@@ -17,5 +17,5 @@ class GlobalChatbotMemoryFactory(ChatbotMemoryFactory[ChatbotVectorDirectoryBase
         return self.__embedder
     
     def get_memory(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, state: _interactions.CreatorsState) -> ChatbotVectorDirectoryBasedMemory:
-        return ChatbotVectorDirectoryBasedMemory(name, specs.configuration_directory.get_directory('memory'+name), state, self.__embedder)
+        return ChatbotVectorDirectoryBasedMemory(name, specs.configuration_directory.get_directory('memory:'+name), state, self.__embedder)
 
