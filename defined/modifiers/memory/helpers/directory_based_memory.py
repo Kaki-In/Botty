@@ -21,7 +21,7 @@ class ChatbotDirectoryBasedMemory(ChatbotMemory, _abc.ABC):
         self.__directory = directory
 
     def save_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
-        resource = self.__directory.get_resource(str(remembering.uuid) + '.json')
+        resource = self.__directory.get_resource(str(remembering.uuid) + '.remembering')
         resource.write_content(_json.dumps({
             'date': remembering.date.timestamp(),
             'context': remembering.context,
@@ -29,13 +29,13 @@ class ChatbotDirectoryBasedMemory(ChatbotMemory, _abc.ABC):
         }))
         
     def forget_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
-        self.__directory.get_resource(str(remembering.uuid) + '.json').delete()
+        self.__directory.get_resource(str(remembering.uuid) + '.remembering').delete()
 
     def get_all_rememberings(self) -> _T.Sequence[ChatbotMemory.Remembering]:
         rememberings: list[ChatbotMemory.Remembering] = []
         
         for filename in self.__directory.list_files():
-            if filename.endswith('.json') and not filename.startswith('.'):
+            if filename.endswith('.remembering') and not filename.startswith('.'):
                 resource = self.__directory.get_resource(filename)
                 data: _chatbot_directory_based_memory_file_object = _json.loads(resource.read_content())
                 
@@ -49,7 +49,7 @@ class ChatbotDirectoryBasedMemory(ChatbotMemory, _abc.ABC):
 
     @property
     def remembering_losing_time(self) -> _datetime.timedelta:
-        days_count = _saves.ConfigurationFile[_chatbot_directory_based_memory_configuration_object](self.__directory.get_resource('conf.json'), {
+        days_count = _saves.ConfigurationFile[_chatbot_directory_based_memory_configuration_object](self.__directory.get_resource('settings.json'), {
             'lost_after_days': 30
         }).read_configuration()['lost_after_days']
         
