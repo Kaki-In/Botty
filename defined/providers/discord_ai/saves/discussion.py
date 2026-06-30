@@ -12,7 +12,7 @@ from .message import DiscordMessageSaver
 class _discord_chatbot_discussion_object(_T.TypedDict):
     channel: _discord.TextChannel | _discord.DMChannel
     read: bool
-    current_tool_message: _discord.Message | None
+    current_tool_message_id: int | None
 
 class DiscordDiscussionPropertiesSaver():
     def __init__(self, file: _saves.ResourceFile) -> None:
@@ -30,31 +30,23 @@ class DiscordDiscussionPropertiesSaver():
             channel = client.get_channel(data['channel_id'])
             assert channel is not None, f"Channel {data['channel_id']} introuvable dans le cache du client"
 
-        current_tool_message = None
-        if client is not None and data['current_tool_message']:
-            current_tool_message = _discord.Message(
-                state=client._connection, 
-                channel=channel,           # type: ignore[arg-type]
-                data=data['current_tool_message']
-            )
-
         return {
             'channel': channel,             # type: ignore[return-value]
             'read': data['read'],
-            'current_tool_message': current_tool_message
+            'current_tool_message_id': data['current_tool_message_id']
         }
         
     def write_properties(
         self,
         channel: _discord.TextChannel | _discord.DMChannel,
         read: bool,
-        current_tool_message: _discord.Message | None
+        current_tool_message_id: int | None
     ) -> None:
         self.__file.write_content(_json.dumps({
             'channel_id': channel.id,
             'guild_id': channel.guild.id if isinstance(channel, _discord.TextChannel) else None,
             'read': read,
-            'current_tool_message': current_tool_message._payload if current_tool_message else None  # type: ignore[attr-defined]
+            'current_tool_message_id': current_tool_message_id
         }, indent=2))
 
 class DiscordDiscussionSaver():
@@ -99,3 +91,4 @@ class DiscordDiscussionSaver():
 
     def delete(self) -> None:
         _shutil.rmtree(self.__directory.path)
+

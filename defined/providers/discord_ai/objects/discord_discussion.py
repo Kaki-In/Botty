@@ -68,14 +68,18 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
     @property
     def directory(self) -> DiscordDiscussionSaver:
         return self.__directory
+    
+    async def get_current_tool_message(self) -> _discord.Message | None:
+        message_id = self.__directory.properties_saver.read_properties()['current_tool_message_id']
+        if message_id is None:
+            return None
+        try:
+            return await self.__channel.fetch_message(message_id)
+        except (_discord.NotFound, _discord.Forbidden):
+            return None
 
-    @property
-    def current_tool_message(self) -> _discord.Message | None:
-        return self.__directory.properties_saver.read_properties()['current_tool_message']
-
-    @current_tool_message.setter
-    def current_tool_message(self, message: _discord.Message | None) -> None:
-        self.__directory.properties_saver.write_properties(self.__channel, not self.has_unread_messages, message)
+    def set_current_tool_message(self, message: _discord.Message | None) -> None:
+        self.__directory.properties_saver.write_properties(self.__channel, not self.has_unread_messages, message.id if message else None)
 
     def add_message(self, message: DiscordChatbotMessage) -> None:
         self.__messages.append(message)
@@ -144,7 +148,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
             self.add_message(created_message)
 
         self.save_message(created_message)
-        self.mark_as_unread()
+        await self.mark_as_unread()
 
         return True
 
@@ -189,7 +193,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         return a
 
     def add_message_from_llm_response(self, specs: _ai_chatbot_data.ChatbotSpecs, response: str) -> None:
-        self.current_tool_message = None
+        self.set_current_tool_message(None)
         
         data = _json.loads(response)
         assert isinstance(data, dict)
@@ -254,11 +258,13 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
                 local_full_name=bot_user.display_name,
             )
 
-    def mark_as_unread(self) -> None:
-        self.__directory.properties_saver.write_properties(self.__channel, False, self.current_tool_message)
+    async def mark_as_unread(self) -> None:
+        tool_message = await self.get_current_tool_message()
+        self.__directory.properties_saver.write_properties(self.__channel, False, tool_message.id if tool_message else None)
 
     def mark_as_read(self) -> None:
-        self.__directory.properties_saver.write_properties(self.__channel, True, self.current_tool_message)
+        tool_message = _asyncio.run_coroutine_threadsafe(self.get_current_tool_message(), self.__loop).result()
+        self.__directory.properties_saver.write_properties(self.__channel, True, tool_message.id if tool_message else None)
 
     def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
         _asyncio.run_coroutine_threadsafe(self.prepare_tool_message(tool, args), self.__loop).result()
@@ -271,13 +277,13 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
 
     async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
         message = await self.__channel.send(f"_Calling tool {_discord.utils.escape_markdown(tool.name)}..._")
-        self.current_tool_message = message
+        self.set_current_tool_message(message)
 
     async def update_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
-        if self.current_tool_message is None:
+        if await self.get_current_tool_message() is None:
             await self.prepare_tool_message(tool, args)
 
-        current_message = self.current_tool_message
+        current_message = await self.get_current_tool_message()
         assert current_message is not None
 
         await current_message.edit(content=f"_Calling tool {_discord.utils.escape_markdown(tool.name)}...\n{_discord.utils.escape_markdown(event_data)}_")
@@ -285,10 +291,10 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
     async def remove_tool_message(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
         self.__directory.save_tool_call(result)
 
-        if self.current_tool_message is None:
+        if await self.get_current_tool_message() is None:
             await self.prepare_tool_message(tool, result.args)
 
-        current_message = self.current_tool_message
+        current_message = await self.get_current_tool_message()
         assert current_message is not None
 
         await current_message.edit(content=f"_{_discord.utils.escape_markdown(tool.name)} action ended:\n{_discord.utils.escape_markdown(result.result)}_")

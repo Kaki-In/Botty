@@ -6,7 +6,7 @@ from .memory import ChatbotMemory
 
 class ChatbotMemoryTool(_interactions.ChatCompletionTool, _abc.ABC):
     def __init__(self, name: str, memory: ChatbotMemory, description: str | None = None) -> None:
-        super().__init__("memory." + name, self.remember, description, False,
+        super().__init__("memorize." + name, self.remember, description, False,
                          sentence_data = _interactions.ChatCompletionTool.Parameter({
                             'type': 'string',
                             'description': 'What should be remembered'
