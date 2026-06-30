@@ -1,6 +1,7 @@
 import interactions as _interactions
 import typing as _T
 import abc as _abc
+import datetime as _datetime
 
 from .memory import ChatbotMemory
 
@@ -25,7 +26,7 @@ class ChatbotMemoryTool(_interactions.ChatCompletionTool, _abc.ABC):
 
     def remember(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str:
         memory = self.__memory
-        memory.remember_from(kwargs['sentence_data'])
+        memory.save_remembering(memory.Remembering(kwargs['sentence_data'], kwargs['context'], _datetime.datetime.now()))
         
         return "element remembered into memory"
 
