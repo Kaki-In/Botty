@@ -159,17 +159,17 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
                 {
                     'type': 'object',
                     'properties': {
+                        'replying_to_old_message': {
+                            'type': ['integer', 'null'],
+                            'description': "(Optional) The identifier of a message to respond to, when clearly needed. Should stay unset or set to null most of the time.",
+                            'enum': [message.telegram_message.id for message in self.messages] + [None]
+
+                         },
                         'type': {
                             'type': 'string',
                             'const': message_method.class_get_messages_typename()
                         },
                         'data': message_method.class_get_json_schema(),
-#                        'replying_to_old_message': {
-#                            'type': ['integer', 'null'],
-#                            'description': "(Optional) The identifier of a message to respond to, when clearly needed. Should stay unset or set to null most of the time.",
-#                            'enum': [message.telegram_message.id for message in self.messages] + [None]
-#
-#                         }
                     },
                     'required': ['type', 'data'],
                     'additionalProperties': False
@@ -189,7 +189,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         for message_method in self.message_methods:
             a += f"- {message_method.class_get_messages_typename()}: \n{message_method.class_get_json_description_for_llm()}\n\n"
             
-        a += 'You can also include a message identifier to reply to if needded, under the key "replying_to_old_message".'
+        a += 'You can also include a message identifier to reply to if needed, under the key "replying_to_old_message".'
         
         return a
     
