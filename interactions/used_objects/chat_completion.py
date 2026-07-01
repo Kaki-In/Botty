@@ -101,7 +101,8 @@ class ChatCompletionDescription():
                  tools: _T.Optional[_T.Sequence[ChatCompletionTool]] = None,
                  discussion_uuid: _T.Optional[str] = None,
                  tools_advancement_follower: _T.Optional[ToolAdvancementFollower] = None,
-                 description_editor: _T.Callable[['ChatCompletionDescription'], 'ChatCompletionDescription'] = lambda self:self
+                 description_editor: _T.Callable[['ChatCompletionDescription'], 'ChatCompletionDescription'] = lambda self:self,
+                 post_processors: _T.Optional[_T.Sequence[_T.Callable[['ChatCompletionResult'], None]]] = None
         ) -> None:
         
         self.__discussion_uuid = discussion_uuid
@@ -110,6 +111,7 @@ class ChatCompletionDescription():
         self.__tools = tools or []
         self.__tools_advancement_follower = tools_advancement_follower
         self.__discussion_editor = description_editor
+        self.__post_processors = post_processors or []
         
     @property
     def discussion_uuid(self) -> str | None:
@@ -146,6 +148,10 @@ class ChatCompletionDescription():
     @property
     def editor(self) -> _T.Callable[['ChatCompletionDescription'], 'ChatCompletionDescription']:
         return self.__discussion_editor
+    
+    @property
+    def post_processors(self) -> _T.Sequence[_T.Callable[['ChatCompletionResult'], None]] :
+        return self.__post_processors
     
     def get_edited(self) -> 'ChatCompletionDescription':
         return self.__discussion_editor(self)
@@ -210,33 +216,36 @@ class ChatCompletionDescription():
             else:
                 break
         
-        return ChatCompletionDescription(first_messages + list(messages) + last_messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
+        return ChatCompletionDescription(first_messages + list(messages) + last_messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor, self.__post_processors)
     
     def adding_message_after(self, *messages: ChatCompletionMessage | ChatCompletionTool.ChatCompletionToolResult) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(list(self.__messages) + list(messages), self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
+        return ChatCompletionDescription(list(self.__messages) + list(messages), self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor, self.__post_processors)
     
     def adding_tools(self, *tools: ChatCompletionTool) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, self.__json_schema, list(self.__tools) + list(tools), self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
+        return ChatCompletionDescription(self.__messages, self.__json_schema, list(self.__tools) + list(tools), self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor, self.__post_processors)
     
     def without_tools(self) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, self.__json_schema, discussion_uuid=self.__discussion_uuid, tools_advancement_follower=self.__tools_advancement_follower, description_editor=self.__discussion_editor)
+        return ChatCompletionDescription(self.__messages, self.__json_schema, discussion_uuid=self.__discussion_uuid, tools_advancement_follower=self.__tools_advancement_follower, description_editor=self.__discussion_editor, post_processors=self.__post_processors)
     
     def without_json_schema(self) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, tools = self.__tools, discussion_uuid=self.__discussion_uuid, tools_advancement_follower=self.__tools_advancement_follower, description_editor=self.__discussion_editor)
+        return ChatCompletionDescription(self.__messages, tools = self.__tools, discussion_uuid=self.__discussion_uuid, tools_advancement_follower=self.__tools_advancement_follower, description_editor=self.__discussion_editor, post_processors=self.__post_processors)
     
     def with_json_schema(self, schema) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor)
+        return ChatCompletionDescription(self.__messages, schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor, self.__post_processors)
     
     def without_editor(self) -> 'ChatCompletionDescription':
-        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower)
+        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, post_processors=self.__post_processors)
     
     def adding_editor_before(self, editor: _T.Callable[['ChatCompletionDescription'], 'ChatCompletionDescription']) -> 'ChatCompletionDescription':
         previous_editor = self.__discussion_editor
-        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, lambda self:previous_editor(editor(self)))
+        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, lambda self:previous_editor(editor(self)), self.__post_processors)
     
     def adding_editor_after(self, editor: _T.Callable[['ChatCompletionDescription'], 'ChatCompletionDescription']) -> 'ChatCompletionDescription':
         previous_editor = self.__discussion_editor
-        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, lambda self:editor(previous_editor(self)))
+        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, lambda self:editor(previous_editor(self)), self.__post_processors)
+    
+    def processing_then(self, *processors: _T.Callable[['ChatCompletionResult'], None]) -> 'ChatCompletionDescription':
+        return ChatCompletionDescription(self.__messages, self.__json_schema, self.__tools, self.__discussion_uuid, self.__tools_advancement_follower, self.__discussion_editor, list(self.__post_processors) + list(processors))
 
 class ChatCompletionResult():
     def __init__(self, result: str, tools_results: _T.Sequence[ChatCompletionTool.ChatCompletionToolResult]) -> None:

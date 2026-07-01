@@ -42,4 +42,4 @@ class OllamaEmbedder(_interactions.Creator[str, _interactions.EmbeddingVector]):
         
         vector = result.embeddings[0]
         
-        return _interactions.EmbeddingVector(_numpy.array(vector))
+        return _interactions.EmbeddingVector.from_list(vector)

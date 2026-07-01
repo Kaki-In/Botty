@@ -1,21 +1,21 @@
-from .base import ChatbotMemoryFactory
-from .helpers import ChatbotVectorDirectoryBasedMemory
+from .base import ChatbotMemory, ChatbotMemoryFactory, ChatbotMemoryEvaluator
+from .registers import ChatbotDirectoryMemoryRegistry
 
 import ai.chatbot_data as _ai_chatbot_data
 import ai.discussion as _ai_discussion
 
 import interactions as _interactions
 
-class UserChatbotMemoryFactory(ChatbotMemoryFactory[ChatbotVectorDirectoryBasedMemory]):
-    def __init__(self, embedder: _interactions.CreatorFactory[str, _interactions.EmbeddingVector]) -> None:
+class UserChatbotMemoryFactory(ChatbotMemoryFactory):
+    def __init__(self, evaluator: ChatbotMemoryEvaluator) -> None:
         super().__init__()
         
-        self.__embedder = embedder
+        self.__evaluator = evaluator
         
     @property
-    def embedder(self) -> _interactions.CreatorFactory[str, _interactions.EmbeddingVector]:
-        return self.__embedder
+    def evaluator(self) -> ChatbotMemoryEvaluator:
+        return self.__evaluator
     
-    def get_memory(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, state: _interactions.CreatorsState) -> ChatbotVectorDirectoryBasedMemory:
-        return ChatbotVectorDirectoryBasedMemory(name, specs.configuration_directory.get_directory(f'memory:{discussion.uuid}:{name}'), state, self.__embedder)
+    def get_memory(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, state: _interactions.CreatorsState) -> ChatbotMemory:
+        return ChatbotMemory(name, self.__evaluator, ChatbotDirectoryMemoryRegistry(specs.configuration_directory.get_directory(f'memory:{discussion.uuid}:{name}')))
 

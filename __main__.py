@@ -11,9 +11,9 @@ from ai.chatbot_data import *
 import saves
 import threading
 import local_utils.images 
-import pathlib as _pathlib
+import pathlib as pathlib
 
-HOME_DIRECTORY = saves.ResourcesDirectory(str(_pathlib.Path.home() / '.botty'))
+HOME_DIRECTORY = saves.ResourcesDirectory(str(pathlib.Path.home() / '.botty'))
 
 if __name__ == '__main__':
     # The main completor. Can be switched with Open AI or any other
@@ -44,7 +44,9 @@ if __name__ == '__main__':
     
     ollama_embedder_factory = OllamaEmbedderFactory()
     query_factory = MemoryQueryCreatorFactory(ollama_creator_factory)
-    bots_registry.add_modifier_to_chatbots(ChatbotMemoryDiscussionModifier(GlobalChatbotMemoryFactory(ollama_embedder_factory), CreatorsState(), query_factory, 'knowledge', "Use this memory for any general knowledge"))
+    
+    evaluator = ChatbotVectorMemoryEvaluator(HOME_DIRECTORY.get_directory('vectors'), ollama_embedder_factory)
+    bots_registry.add_modifier_to_chatbots(ChatbotMemoryDiscussionModifier(GlobalChatbotMemoryFactory(evaluator), query_factory, 'knowledge', "Use this memory for any general knowledge"))
 
     # Providers need to be stopped separately
     telegramProvider = MainTelegramBotsHandler(*telegram_message_methods)

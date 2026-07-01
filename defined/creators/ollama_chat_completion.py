@@ -22,7 +22,7 @@ class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.Chat
                 'min_p': 0.4,
                 'top_p': 1,
                 'top_k': 256,
-                'temperature': 0.9
+                'temperature': 0.5
             }
         })
         config = conf_file.read_configuration()
@@ -63,7 +63,13 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         
     def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
         try:
-            return _asyncio.run_coroutine_threadsafe(self.chat(description), self.__loop).result()
+            result = _asyncio.run_coroutine_threadsafe(self.chat(description), self.__loop).result()
+            
+            for post_processor in description.post_processors:
+                post_processor(result)
+                
+            return result
+                
         except (_httpx.CloseError, _asyncio.CancelledError):
             raise _interactions.InteractionInterruptionError()
     

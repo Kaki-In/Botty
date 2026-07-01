@@ -7,9 +7,9 @@ import ai.discussion as _ai_discussion
 
 import interactions as _interactions
 
-class ChatbotMemoryFactory[mem: ChatbotMemory]():
+class ChatbotMemoryFactory():
     @_abc.abstractmethod
-    def get_memory(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, state: _interactions.CreatorsState) -> mem:
+    def get_memory(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, state: _interactions.CreatorsState) -> ChatbotMemory:
         ...
         
 
