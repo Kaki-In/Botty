@@ -45,8 +45,9 @@ if __name__ == '__main__':
     ollama_embedder_factory = OllamaEmbedderFactory()
     query_factory = MemoryQueryCreatorFactory(ollama_creator_factory)
     
-    evaluator = ChatbotVectorMemoryEvaluator(HOME_DIRECTORY.get_directory('vectors'), ollama_embedder_factory)
-    bots_registry.add_modifier_to_chatbots(ChatbotMemoryDiscussionModifier(GlobalChatbotMemoryFactory(evaluator), query_factory, 'knowledge', "Use this memory for any general knowledge"))
+    for bot in bots_registry.chatbots:
+        evaluator = ChatbotVectorMemoryEvaluator(bot.specs.directory.get_directory('embedding-cache'), ollama_embedder_factory)
+        bot.add_discussion_modifier(ChatbotMemoryDiscussionModifier(GlobalChatbotMemoryFactory(evaluator), query_factory, 'knowledge', "Use this memory for any general knowledge"))
 
     # Providers need to be stopped separately
     telegramProvider = MainTelegramBotsHandler(*telegram_message_methods)
