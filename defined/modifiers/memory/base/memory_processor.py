@@ -5,6 +5,7 @@ import ai.discussion as _ai_discussion
 from .memory_factory import ChatbotMemoryFactory
 from .memory_registry import ChatbotMemoryRegistry
 from .memory_evaluator import ChatbotMemoryEvaluator
+from .memory_discussion_modifier import ChatbotMemoryDiscussionModifier
 
 import typing as _T
 import interactions as _interactions
@@ -17,13 +18,21 @@ class _remembering_response_object(_T.TypedDict):
     context: dict[str, _T.Any]
 
 class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
-    def __init__(self, name: str, directory: _saves.ResourcesDirectory, factory: ChatbotMemoryFactory[ChatbotMemoryRegistry, ChatbotMemoryEvaluator], creator_factory: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
+    def __init__(self, modifier: ChatbotMemoryDiscussionModifier, directory: _saves.ResourcesDirectory, factory: ChatbotMemoryFactory[ChatbotMemoryRegistry, ChatbotMemoryEvaluator], creator_factory: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
         super().__init__()
         
-        self.__name = name
+        self.__modifier = modifier
         self.__directory = directory
         self.__factory = factory
         self.__creator_factory = creator_factory
+        
+    @property
+    def modifier(self) -> ChatbotMemoryDiscussionModifier:
+        return self.__modifier
+    
+    @property
+    def directory(self) -> _saves.ResourcesDirectory:
+        return self.__directory
         
     @property
     def memory_factory(self) -> ChatbotMemoryFactory[ChatbotMemoryRegistry, ChatbotMemoryEvaluator]:
@@ -36,7 +45,7 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
     def process_message(self, message: _ai_discussion.ChatbotMessage, from_discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
         state = _interactions.CreatorsState()
         
-        memory = self.__factory.get_memory(self.__name, specs, from_discussion, state)
+        memory = self.__factory.get_memory(self.__modifier.name, specs, from_discussion, state)
         
         rememberings_json_schema = {
             'type': 'array',
@@ -71,7 +80,7 @@ You must include your rememberings into a JSON array containing objects with two
         
         description = _interactions.ChatCompletionDescription(
             [
-                _interactions.ChatCompletionMessage('system', prompt_file.read_content()),
+                _interactions.ChatCompletionMessage('system', prompt_file.read_content().format(name = self.__modifier.name, description = self.__modifier.description)),
                 _interactions.ChatCompletionMessage('user', "Please extract some rememberings on this message : \n\n" + message.export_to_llm(specs, images), images)
             ],
             json_schema=rememberings_json_schema

@@ -48,7 +48,7 @@ class MemoryQueryCreator(_interactions.Creator[tuple[_ai_chatbot_data.ChatbotSpe
         
         chat = _interactions.ChatCompletionDescription(
             [
-                _interactions.ChatCompletionMessage('system', self.__system_prompt.format()),
+                _interactions.ChatCompletionMessage('system', self.__system_prompt),
                 _interactions.ChatCompletionMessage('user', user_messages, images),
             ],
             json_schema=json_schema
