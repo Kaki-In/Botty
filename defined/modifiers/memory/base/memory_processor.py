@@ -81,7 +81,7 @@ You must include your rememberings into a JSON array containing objects with two
         description = _interactions.ChatCompletionDescription(
             [
                 _interactions.ChatCompletionMessage('system', prompt_file.read_content().format(name = self.__modifier.name, description = self.__modifier.description)),
-                _interactions.ChatCompletionMessage('user', "Please extract some rememberings on this message : \n\n" + message.export_to_llm(specs, images), images)
+                _interactions.ChatCompletionMessage('user', "Please extract some rememberings on this message : \n\n" + str(message.export_to_llm(specs, images)), images)
             ],
             json_schema=rememberings_json_schema
         )
