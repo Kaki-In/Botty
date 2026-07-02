@@ -1,6 +1,7 @@
 from .chatbot import Chatbot
 from .discussion_modifier import ChatbotDiscussionModifier
 from .discussion_provider import ChatbotDiscussionsProvider
+from .message_processor import ChatbotMessageProcessor
 
 import typing as _T
 
@@ -21,6 +22,10 @@ class ChatbotsRegistry():
     def add_provider_to_chatbots(self, provider: ChatbotDiscussionsProvider) -> None:
         for chatbot in self.__chatbots:
             chatbot.add_discussion_provider(provider)
+            
+    def add_processor_to_chatbots(self, processor: ChatbotMessageProcessor) -> None:
+        for chatbot in self.__chatbots:
+            chatbot.add_message_processor(processor)
 
     def start_all_chatbots(self) -> None:
         for chatbot in self.__chatbots:

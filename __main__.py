@@ -1,7 +1,8 @@
 from defined.chatbots import *
-from defined.modifiers import *
-from defined.providers import *
 from defined.creators import *
+from defined.modifiers import *
+from defined.processors import *
+from defined.providers import *
 
 from interactions import *
 
@@ -34,13 +35,15 @@ if __name__ == '__main__':
     # Starting all bots
     bots_registry = ChatbotsRegistry()
     for directory in HOME_DIRECTORY.list_directories():
-        bot = RealisticChatbot(directory, ChatbotSpecs(HOME_DIRECTORY.get_directory(directory), ollama_creator_factory))
+        bot = RealisticChatbot(ChatbotSpecs(directory, HOME_DIRECTORY.get_directory(directory), ollama_creator_factory))
         bots_registry.add_chatbot(bot)
         
     # add discussion modifiers
     bots_registry.add_modifier_to_chatbots(TimeAwareChatbotModifier())
     bots_registry.add_modifier_to_chatbots(DiscussionCutModifier())
     bots_registry.add_modifier_to_chatbots(ToolsInserterDiscussionModifier(  )) # add your custom tools here
+    
+    bots_registry.add_processor_to_chatbots(SimplyPrintChatbotMessagesProcessor())
     
     ollama_embedder_factory = OllamaEmbedderFactory()
     query_factory = MemoryQueryCreatorFactory(ollama_creator_factory)
@@ -55,7 +58,7 @@ if __name__ == '__main__':
     
     bots_registry.add_provider_to_chatbots(telegramProvider)
     bots_registry.add_provider_to_chatbots(discordProvider)
-
+    
     # All conversions that can be operated during the discussion for telegram bots. 
     telegramProvider.add_creator_factory(FullImageGeneratorFactory(AIPromptGeneratorFactory(ollama_creator_factory), StableDiffusionImageGeneratorFactory()), str, local_utils.images.Image)
     telegramProvider.add_creator_factory(ImageDescriptorFactory(ollama_creator_factory), local_utils.images.Image, ChatCompletionResult)
