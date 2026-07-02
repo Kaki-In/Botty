@@ -1,13 +1,16 @@
 from .bot_handler import DiscordBotHandler
-from ..objects import DiscordChatbotMessage
+from ..objects import DiscordChatbotMessage, DiscordChatbotDiscussion
 
 import interactions as _interactions
 import ai.chatbot_data as _ai_chatbot_data
+import ai.chatbots as _ai_chatbots
 import ai.discussion as _ai_discussion
 import typing as _T
 
-class MainDiscordBotsHandler(_ai_discussion.ChatbotDiscussionsProvider):
+class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChatbotDiscussion, DiscordChatbotMessage]):
     def __init__(self, *message_methods: _T.Type[DiscordChatbotMessage]) -> None:
+        super().__init__()
+        
         self.__message_methods = list(message_methods)
         self.__creator_facts: list[tuple[_interactions.CreatorFactory, _T.Type, _T.Type]] = []
 
@@ -40,7 +43,7 @@ class MainDiscordBotsHandler(_ai_discussion.ChatbotDiscussionsProvider):
             if bot.chatbot_specs == specs:
                 return bot
 
-        new_bot = DiscordBotHandler(specs, self._create_creators_map(), _interactions.CreatorsState(), self.__message_methods)
+        new_bot = DiscordBotHandler(self._get_new_messages_queues(specs), specs, self._create_creators_map(), _interactions.CreatorsState(), self.__message_methods)
         self.__bots.append(new_bot)
         return new_bot
 

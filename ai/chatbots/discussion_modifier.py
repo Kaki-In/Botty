@@ -1,7 +1,7 @@
 import interactions as _interactions
 
 from ..chatbot_data import ChatbotSpecs
-from .discussion import ChatbotDiscussion
+from ..discussion.discussion import ChatbotDiscussion
 
 import abc as _abc
 

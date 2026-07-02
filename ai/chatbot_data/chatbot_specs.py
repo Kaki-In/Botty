@@ -1,14 +1,17 @@
 import saves as _saves
 import interactions as _interactions
-import typing as _T
-import uuid as _uuid
 import abc as _abc
 
 class ChatbotSpecs(_abc.ABC):
-    def __init__(self, directory: _saves.ResourcesDirectory, message_creator: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
+    def __init__(self, name: str, directory: _saves.ResourcesDirectory, message_creator: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
+        self.__name = name
         self.__messages_creator = message_creator
         self.__directory = directory
         self.__configuration_directory = directory.get_directory('conf')
+        
+    @property
+    def name(self) -> str:
+        return self.__name
 
     @property
     def messages_creator(self) -> _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]:

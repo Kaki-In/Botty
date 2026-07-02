@@ -3,8 +3,6 @@ import typing as _T
 import datetime as _datetime
 import uuid as _uuid
 
-# _cmrcfmps = _T.ParamSpec('_cmrcfmps')
-
 class ChatbotMemoryRegistry(_abc.ABC):
     class Remembering():
         def __init__(self, data: str, context: _T.Mapping[str, _T.Any], date: _datetime.datetime, uuid: _T.Optional[_uuid.UUID] = None) -> None:
@@ -30,16 +28,15 @@ class ChatbotMemoryRegistry(_abc.ABC):
             return self.__uuid
         
         def __repr__(self) -> str:
-            return ""\
-                f"# {self.__date.strftime("%d/%m/%Y, %H:%M:%S")} : {self.__data}\n"\
+            return "" \
+                f"# {self.__date.strftime("%d/%m/%Y, %H:%M:%S")} : {self.__data}\n" \
                 f"Context :\n{self.__context}"
     
     def __init__(self) -> None:
         self.save_remembering = self._checks_for_memory(self.save_remembering)
         self.forget_remembering = self._checks_for_memory(self.forget_remembering)
-        self.get_all_rememberings = self._checks_for_memory(self.get_all_rememberings)
         self.clear = self._checks_for_memory(self.clear)
-                
+
     def _checks_for_memory[**funcargs, rtype](self, func: _T.Callable[funcargs, rtype]) -> _T.Callable[funcargs, rtype]:
         def fn(*args: funcargs.args, **kwargs: funcargs.kwargs):
             self.delete_useless_elements()

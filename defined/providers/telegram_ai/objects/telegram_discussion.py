@@ -13,15 +13,16 @@ import json as _json
 import traceback as _traceback
 import html as _html
 import saves as _saves
+import queue as _queue
 
 class _telegram_discussion_configuration_object(_T.TypedDict):
     public_chats_only_answer_to_mentions: bool
 
 class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbotMessage]):
-    def __init__(self, message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], loop: _asyncio.AbstractEventLoop, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, bot: _telegram.Bot, directory: TelegramDiscussionSaver) -> None:
+    def __init__(self, created_messages_queue: _queue.Queue[tuple[TelegramChatbotMessage, _T.Self]], message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], loop: _asyncio.AbstractEventLoop, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, bot: _telegram.Bot, directory: TelegramDiscussionSaver) -> None:
         discussion_properties = directory.properties_saver.read_properties(bot)
 
-        super().__init__(str(discussion_properties['chat'].id), creators_state)
+        super().__init__('tg:' + str(discussion_properties['chat'].id), created_messages_queue, creators_state)
 
         self.__chat = discussion_properties['chat']
 
@@ -72,7 +73,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
     def current_tool_message(self, message: _telegram.Message | None) -> None:
         self.__directory.properties_saver.write_properties(self.__chat, not self.has_unread_messages, message)
     
-    def add_message(self, message: TelegramChatbotMessage) -> None:
+    def _add_message(self, message: TelegramChatbotMessage) -> None:
         self.__messages.append(message)
         self.save_message(message)
 

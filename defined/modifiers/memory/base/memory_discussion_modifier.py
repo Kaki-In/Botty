@@ -1,4 +1,5 @@
 import ai.discussion as _ai_discussion
+import ai.chatbots as _ai_chatbots
 import ai.chatbot_data as _ai_chatbot_data
 
 import interactions as _interactions
@@ -8,7 +9,7 @@ from .memory import ChatbotMemory
 from .memory_tool import ChatbotMemoryTool
 from .memory_factory import ChatbotMemoryFactory
 
-class ChatbotMemoryDiscussionModifier(_ai_discussion.ChatbotDiscussionModifier):
+class ChatbotMemoryDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
     def __init__(self, memory_factory: ChatbotMemoryFactory, query_factory: _interactions.CreatorFactory[tuple[_ai_chatbot_data.ChatbotSpecs,_ai_discussion.ChatbotDiscussion], str], name: str, description: _T.Optional[str] = None) -> None:
         super().__init__()
         
@@ -50,7 +51,7 @@ class ChatbotMemoryDiscussionModifier(_ai_discussion.ChatbotDiscussionModifier):
         return description.adding_message_after(
             _interactions.ChatCompletionMessage(
                 'system',
-                "You remember about these elements : \n\n" + '\n\n --- \n\n'.join(str(element) for element in elements)
+                "There are some rememberings you have : \n\n" + '\n\n --- \n\n'.join(str(element) for element in elements)
             )
         )
 

@@ -6,11 +6,13 @@ import interactions as _interactions
 
 import typing as _T
 import abc as _abc
+import queue as _queue
 
 class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
-    def __init__(self, uuid: str, creators_state: _interactions.CreatorsState) -> None:
+    def __init__(self, uuid: str, created_messages_queue: _queue.Queue[tuple[messagesTypes, _T.Self]], creators_state: _interactions.CreatorsState) -> None:
         super().__init__()
 
+        self.__created_messages_queue = created_messages_queue
         self.__uuid = uuid
         self.__creators_state = creators_state
 
@@ -36,14 +38,18 @@ class ChatbotDiscussion[messagesTypes: ChatbotMessage](_abc.ABC):
     @_abc.abstractmethod
     def tool_calls(self) -> _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]:
         ...
-    
+        
     @_abc.abstractmethod
     def mark_as_read(self) -> None:
         ...
         
     @_abc.abstractmethod
-    def add_message(self, message: messagesTypes) -> None:
+    def _add_message(self, message: messagesTypes) -> None:
         ...
+    
+    def add_message(self, message: messagesTypes) -> None:
+        self._add_message(message)
+        self.__created_messages_queue.put((message, self))
     
     @_abc.abstractmethod
     def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:

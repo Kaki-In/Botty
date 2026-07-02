@@ -10,8 +10,8 @@ import traceback
 import time as _time
 
 class SimpleChatbot(_ai_chatbots.Chatbot):
-    def __init__(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
-        super().__init__(name, specs)
+    def __init__(self, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
+        super().__init__(specs)
 
         self.__prompt = self.specs.directory.get_resource("prompt.txt")
 
@@ -44,6 +44,8 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
 
     def run(self) -> None:
         while not self.should_stop:
+            self._process_new_messages()
+            
             discussions = self.discussions
 
             for discussion in discussions:

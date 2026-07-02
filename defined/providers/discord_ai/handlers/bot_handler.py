@@ -8,17 +8,20 @@ from ..objects import DiscordChatbotDiscussion, DiscordChatbotMessage
 from ..saves import DiscordBotSaver, DiscordDiscussionSaver
 
 import interactions as _interactions
+import queue as _queue
 import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data
 
 
 class DiscordBotHandler():
-    def __init__(self, specs: _ai_chatbot_data.ChatbotSpecs, creators_map: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, message_methods: _T.Sequence[_T.Type[DiscordChatbotMessage]], directly_start: bool = True) -> None:
+    def __init__(self, created_messages_queue: _queue.Queue[tuple[DiscordChatbotMessage, DiscordChatbotDiscussion]], specs: _ai_chatbot_data.ChatbotSpecs, creators_map: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, message_methods: _T.Sequence[_T.Type[DiscordChatbotMessage]], directly_start: bool = True) -> None:
         discord_directory = specs.directory.get_directory('discord')
         token_file = discord_directory.get_resource('token')
         
         if not (token_file.exists and (token := token_file.read_content().replace(" ", '').replace("\n", '')) != ''):
             token_file.write_content('')
             raise ValueError("Please provide a token in file " + repr(token_file.path))
+        
+        self.__created_messages_queue = created_messages_queue
 
         self.__token = token
         self.__directory = DiscordBotSaver(discord_directory.get_directory('discussions'))
@@ -99,7 +102,7 @@ class DiscordBotHandler():
         if not saver.properties_saver.exists:
             saver.properties_saver.write_properties(channel, False, None)
 
-        return DiscordChatbotDiscussion(self.__message_methods, self.__loop, self.__creators_map, self.__creators_state, self.__client, saver)
+        return DiscordChatbotDiscussion(self.__created_messages_queue, self.__message_methods, self.__loop, self.__creators_map, self.__creators_state, self.__client, saver)
 
     def delete_discussion(self, discussion: DiscordChatbotDiscussion) -> None:
         saver = self._get_discussion_saver(discussion.channel)
@@ -124,6 +127,7 @@ class DiscordBotHandler():
         try:
             discussion = self.get_discussion_or_create(channel)
             await discussion.handle_message(self.__chatbot_specs, message)
+            
         except Exception:
             _traceback.print_exc()
 
@@ -139,6 +143,7 @@ class DiscordBotHandler():
         for discussion_saver in self.__directory.discussions_savers:
             try:
                 discussion = DiscordChatbotDiscussion(
+                    self.__created_messages_queue,
                     self.__message_methods,
                     self.__loop,
                     self.__creators_map,

@@ -1,11 +1,12 @@
 import ai.chatbot_data as _ai_chatbot_data
+import ai.chatbots as _ai_chatbots
 import ai.discussion as _ai_discussion
 
 import interactions as _interactions
 
 import typing as _T
 
-class ToolsInserterDiscussionModifier(_ai_discussion.ChatbotDiscussionModifier):
+class ToolsInserterDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
     def __init__(self, *tools: _interactions.ChatCompletionTool) -> None:
         self.__tools = tools
 

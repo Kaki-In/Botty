@@ -14,7 +14,7 @@ class _time_aware_configuration_object(_T.TypedDict):
     locale: str
     intro_text: str
 
-class TimeAwareChatbotModifier(_ai_discussion.ChatbotDiscussionModifier):
+class TimeAwareChatbotModifier(_ai_chatbots.ChatbotDiscussionModifier):
     def get_configuration_from(self, specs: _ai_chatbot_data.ChatbotSpecs) -> _time_aware_configuration_object:
         return _saves.ConfigurationFile[_time_aware_configuration_object](specs.configuration_directory.get_directory('time_aware').get_resource('conf.json'), {
                 'format': "yyyy-MM-dd 'at' HH:mm", 

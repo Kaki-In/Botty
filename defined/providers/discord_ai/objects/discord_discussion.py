@@ -11,6 +11,7 @@ import asyncio as _asyncio
 import json as _json
 import traceback as _traceback
 import saves as _saves
+import queue as _queue
 
 class _discord_discussion_configuration_object(_T.TypedDict):
     public_chats_only_answer_to_mentions: bool
@@ -18,6 +19,7 @@ class _discord_discussion_configuration_object(_T.TypedDict):
 class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMessage]):
     def __init__(
         self,
+        created_messages_queue: _queue.Queue[tuple[DiscordChatbotMessage, _T.Self]],
         message_methods: _T.Sequence[_T.Type[DiscordChatbotMessage]],
         loop: _asyncio.AbstractEventLoop,
         creators: _interactions.CreatorsMap,
@@ -27,7 +29,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
     ) -> None:
         discussion_properties = directory.properties_saver.read_properties(client)
 
-        super().__init__(str(discussion_properties['channel'].id), creators_state)
+        super().__init__('discord'+str(discussion_properties['channel'].id), created_messages_queue, creators_state)
 
         self.__channel: _discord.TextChannel | _discord.DMChannel = discussion_properties['channel']
         self.__client = client
@@ -81,7 +83,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
     def set_current_tool_message(self, message: _discord.Message | None) -> None:
         self.__directory.properties_saver.write_properties(self.__channel, not self.has_unread_messages, message.id if message else None)
 
-    def add_message(self, message: DiscordChatbotMessage) -> None:
+    def _add_message(self, message: DiscordChatbotMessage) -> None:
         self.__messages.append(message)
         self.save_message(message)
         self.creators_state.interrupt_all()
@@ -117,9 +119,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
 
         raise TypeError("no method to build this message")
 
-    async def handle_message(self, specs: _ai_chatbot_data.ChatbotSpecs, message: _discord.Message, is_edit: bool = False) -> bool:
-        # Pas d'objet Update en Discord : is_edit est passé explicitement
-        # depuis les handlers on_message / on_message_edit.
+    async def handle_message(self, specs: _ai_chatbot_data.ChatbotSpecs, message: _discord.Message, is_edit: bool = False):
         try:
             message_method = self.get_message_method_from_discord(message)
         except TypeError:
@@ -127,7 +127,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
                 await message.delete()
             except Exception:
                 print("Could not handle message", message)
-            return False
+            return
 
         config = _saves.ConfigurationFile[_discord_discussion_configuration_object](
             specs.directory.get_directory('discord').get_directory('conf').get_resource('discussions.json'),
@@ -135,7 +135,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         ).read_configuration()
 
         if not isinstance(message.channel, _discord.DMChannel) and config['public_chats_only_answer_to_mentions'] and not message_method.is_for_me(message):
-            return False
+            return
 
         message_saver = self.__directory.get_message_saver(message)
         message_saver.properties_file.write_message_properties(message, message_method.class_get_messages_typename())
@@ -149,8 +149,6 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
 
         self.save_message(created_message)
         await self.mark_as_unread()
-
-        return True
 
     def get_json_schema(self) -> _T.Any:
         return {

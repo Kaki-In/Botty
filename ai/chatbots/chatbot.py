@@ -4,27 +4,31 @@ import threading as _threading
 
 import interactions as _interactions
 
-from ..discussion import ChatbotDiscussionsProvider, ChatbotDiscussionModifier, ChatbotDiscussion, ChatbotSender, ChatbotMessage
+from ..discussion import ChatbotDiscussion, ChatbotSender, ChatbotMessage
 from ..chatbot_data import ChatbotSpecs
+
+from .discussion_provider import ChatbotDiscussionsProvider
+from .discussion_modifier import ChatbotDiscussionModifier
+from .message_processor import ChatbotMessageProcessor
 
 class Chatbot(_abc.ABC):
     _subclasses = {}
     _defined_elements = {}
 
-    def __init__(self, name: str, specs: ChatbotSpecs, modifiers: _T.Optional[_T.Sequence[ChatbotDiscussionModifier]] = None) -> None:
+    def __init__(self, specs: ChatbotSpecs, modifiers: _T.Optional[_T.Sequence[ChatbotDiscussionModifier]] = None, processors: _T.Optional[_T.Sequence[ChatbotMessageProcessor]] = None) -> None:
         super().__init__()
 
-        self.__name = name
         self.__specs = specs
         self.__thread = _threading.Thread(target=self.run)
         self.__discussions_providers: list[ChatbotDiscussionsProvider] = []
         self.__modifiers = list(modifiers or [])
+        self.__messages_processors = list(processors or [])
 
         self.__should_stop = False
 
     @property
     def name(self) -> str:
-        return self.__name
+        return self.__specs.name
     
     @property
     def discussions_providers(self) -> _T.Sequence[ChatbotDiscussionsProvider]:
@@ -37,6 +41,10 @@ class Chatbot(_abc.ABC):
     @property
     def should_stop(self) -> bool:
         return self.__should_stop
+    
+    @property
+    def processors(self) -> _T.Sequence[ChatbotMessageProcessor]:
+        return self.__messages_processors
 
     @property
     def discussions(self) -> _T.Sequence[ChatbotDiscussion[ChatbotMessage[ChatbotSender]]]:
@@ -59,6 +67,9 @@ class Chatbot(_abc.ABC):
     
     def add_discussion_provider(self, provider: ChatbotDiscussionsProvider) -> None:
         self.__discussions_providers.append(provider)
+        
+    def add_message_processor(self, processor: ChatbotMessageProcessor) -> None:
+        self.__messages_processors.append(processor)
     
     def get_discussion_by_id[discussionType: ChatbotDiscussion](self, uuid: str, discussionType: _T.Type[discussionType]) -> discussionType:
         for discussion in self.discussions:
@@ -75,6 +86,14 @@ class Chatbot(_abc.ABC):
         result = discussion.creators_state.create_from_factory(self.__specs.messages_creator, description, self.__specs.configuration_directory.get_directory("main_chat_completion"))
         
         return result.result
+    
+    def _process_new_messages(self) -> None:
+        for provider in self.__discussions_providers:
+            while provider.has_next_added_messages(self.specs):
+                message, discussion = provider.next_added_message(self.specs)
+                
+                for processor in self.__messages_processors:
+                    processor.process_message(message, discussion, self.specs)
     
     @_abc.abstractmethod
     def run(self) -> None:

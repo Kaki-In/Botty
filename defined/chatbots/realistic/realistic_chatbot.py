@@ -23,8 +23,8 @@ class _realistic_chatbot_configuration_object(_T.TypedDict):
     never_force_answer: bool
 
 class RealisticChatbot(_ai_chatbots.Chatbot):
-    def __init__(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
-        super().__init__(name, specs)
+    def __init__(self, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
+        super().__init__(specs)
 
         self.__prompt = self.specs.directory.get_resource("prompt.txt")
         if not self.__prompt.exists:
@@ -118,6 +118,8 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
         wait_time_coeff = 0
 
         while not self.should_stop:
+            self._process_new_messages()
+            
             discussions = self.discussions
 
             found_discussion: bool = False
