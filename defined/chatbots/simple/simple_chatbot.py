@@ -44,8 +44,6 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
 
     def run(self) -> None:
         while not self.should_stop:
-            self._process_new_messages()
-            
             discussions = self.discussions
 
             for discussion in discussions:
@@ -57,9 +55,11 @@ class SimpleChatbot(_ai_chatbots.Chatbot):
                         pass
                     except Exception:
                         traceback.print_exc()
+
+            self._process_new_messages()
             
             _time.sleep(10)
-
+            
 
 
 

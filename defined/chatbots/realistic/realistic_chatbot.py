@@ -118,8 +118,6 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
         wait_time_coeff = 0
 
         while not self.should_stop:
-            self._process_new_messages()
-            
             discussions = self.discussions
 
             found_discussion: bool = False
@@ -158,11 +156,13 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
             else:
                 wait_time_coeff += 1
 
+            self._process_new_messages()
+
             t = _time.monotonic()
             
             while _time.monotonic() - t < self.calculate_wait_time(wait_time_coeff) and not self.should_stop:
                 _time.sleep(0.1)
-
+            
 
 
 
