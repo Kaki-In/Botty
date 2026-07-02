@@ -19,6 +19,10 @@ class ChatbotDirectoryMemoryRegistry(ChatbotMemoryRegistry, _abc.ABC):
         super().__init__()
         
         self.__directory = directory
+        
+    @property
+    def directory(self) -> _saves.ResourcesDirectory:
+        return self.__directory
 
     def save_remembering(self, remembering: ChatbotMemoryRegistry.Remembering) -> None:
         resource = self.__directory.get_resource(str(remembering.uuid) + '.remembering')

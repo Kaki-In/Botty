@@ -5,3 +5,4 @@ from .memory_discussion_modifier import ChatbotMemoryDiscussionModifier
 from .memory_evaluator import ChatbotMemoryEvaluator
 from .memory_registry import ChatbotMemoryRegistry
 
+from .memory_processor import ChatbotMemoryProcessor

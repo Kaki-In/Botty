@@ -46,11 +46,37 @@ if __name__ == '__main__':
     bots_registry.add_processor_to_chatbots(SimplyPrintChatbotMessagesProcessor())
     
     ollama_embedder_factory = OllamaEmbedderFactory()
-    query_factory = MemoryQueryCreatorFactory(ollama_creator_factory)
+    query_factory = DiscussionExaminatorFactory(ollama_creator_factory, """You are a query parser for a vector-based memory. 
+A discussion will be provided, and you must provide a query which allows to search in this memory. 
+
+Queries must be natural-language words in the discussion language, which describes what to search. 
+
+For instance : 
+
+Discussion : (from bob) Hello ! Are you better since last evening ? 
+Your possible answer : "feeling bad during evening"
+
+You must only answer by the query without any comment. 
+""")
+    remembering_factory = DiscussionExaminatorFactory(ollama_creator_factory, """You are a discussion remembering processor. 
+A discussion will be provided, and you must provide a query which allows to search in this memory. 
+
+Queries must be natural-language words in the discussion language, which describes what to search. 
+
+For instance : 
+
+Discussion : (from bob) Hello ! Are you better since last evening ? 
+Your possible answer : "feeling bad during evening"
+
+You must only answer by the query without any comment. 
+""")
     
+    # Adds memory to bots
     for bot in bots_registry.chatbots:
-        evaluator = ChatbotVectorMemoryEvaluator(bot.specs.directory.get_directory('embedding-cache'), ollama_embedder_factory)
-        bot.add_discussion_modifier(ChatbotMemoryDiscussionModifier(GlobalChatbotMemoryFactory(evaluator), query_factory, 'knowledge', "Use this memory for any general knowledge"))
+        memory_factory = GlobalChatbotMemoryFactory(ChatbotVectorMemoryEvaluator(bot.specs.directory.get_directory('embedding-cache'), ollama_embedder_factory))
+        
+        bot.add_discussion_modifier(ChatbotMemoryDiscussionModifier(memory_factory, query_factory, 'knowledge', "Use this memory for any general knowledge", provides_tool=False)) # For the bot to remember back som elements. Tools allow the bot to explictly ask to save a remembering, but it is useless in this context. 
+        bot.add_message_processor(ChatbotMemoryProcessor('knowledge', bot.specs.configuration_directory.get_directory('memory_processor'), memory_factory, ollama_creator_factory)) # For the bot to save its rememberings
 
     # Providers need to be stopped separately
     telegramProvider = MainTelegramBotsHandler(*telegram_message_methods)
