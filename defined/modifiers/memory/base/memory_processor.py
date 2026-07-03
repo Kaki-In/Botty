@@ -64,23 +64,23 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
             }
         }
         
-        prompt_file = self.__directory.get_resource('prompt.txt')
+        prompt_file = self.__directory.get_resource(self.__modifier.name + '.txt')
         
         if not prompt_file.exists:
             prompt_file.write_content("""You are a remembering extractor. 
-The user will provide you a message, and you must extract some rememberings to add into the {name} memory. 
+The user will provide you a message, and you must extract some rememberings to add into the "{name}" memory. 
 The memory will then be used according this description : {description}. 
 
 You must include your rememberings into a JSON array containing objects with two keys : 
  - `sentence` : the sentence that describes the remembering
  - `context` : any context element attached to this remembering
-""")
+""".format(name = self.__modifier.name, description = self.__modifier.description))
         
         images = []
         
         description = _interactions.ChatCompletionDescription(
             [
-                _interactions.ChatCompletionMessage('system', prompt_file.read_content().format(name = self.__modifier.name, description = self.__modifier.description)),
+                _interactions.ChatCompletionMessage('system', prompt_file.read_content()),
                 _interactions.ChatCompletionMessage('user', "Please extract some rememberings on this message : \n\n" + str(message.export_to_llm(specs, images)), images)
             ],
             json_schema=rememberings_json_schema
