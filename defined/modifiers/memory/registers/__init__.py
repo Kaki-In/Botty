@@ -1,2 +1,0 @@
-from .directory import ChatbotDirectoryMemoryRegistry
-

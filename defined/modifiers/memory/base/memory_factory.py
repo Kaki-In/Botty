@@ -1,6 +1,4 @@
 from .memory import ChatbotMemory
-from .memory_registry import ChatbotMemoryRegistry
-from .memory_evaluator import ChatbotMemoryEvaluator
 
 import abc as _abc
 
@@ -9,9 +7,9 @@ import ai.discussion as _ai_discussion
 
 import interactions as _interactions
 
-class ChatbotMemoryFactory[registry: ChatbotMemoryRegistry, evaluator: ChatbotMemoryEvaluator]():
+class ChatbotMemoryFactory[preparation_type]():
     @_abc.abstractmethod
-    def get_memory(self, name: str, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, state: _interactions.CreatorsState) -> ChatbotMemory[registry, evaluator]:
+    def get_memory(self, name: str, description: str, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs, state: _interactions.CreatorsState) -> ChatbotMemory[preparation_type]:
         ...
         
 

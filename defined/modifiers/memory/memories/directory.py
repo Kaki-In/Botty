@@ -1,3 +1,6 @@
+from ai.chatbot_data.chatbot_specs import ChatbotSpecs
+from ai.discussion.discussion import ChatbotDiscussion
+
 from ..base import *
 
 import typing as _T
@@ -5,6 +8,9 @@ import abc as _abc
 import saves as _saves
 import datetime as _datetime
 import json as _json
+
+import ai.discussion as _ai_discussion
+import ai.chatbot_data as _ai_chatbot_data
 
 class _chatbot_directory_based_memory_file_object(_T.TypedDict):
     sentence: str
@@ -14,17 +20,27 @@ class _chatbot_directory_based_memory_file_object(_T.TypedDict):
 class _chatbot_directory_based_memory_configuration_object(_T.TypedDict):
     lost_after_days: int
 
-class ChatbotDirectoryMemoryRegistry(ChatbotMemoryRegistry, _abc.ABC):
-    def __init__(self, directory: _saves.ResourcesDirectory) -> None:
-        super().__init__()
+class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
+    class Evaluator[evaluator_preparation_type](_abc.ABC):
+        @_abc.abstractmethod
+        def is_relevant(self, preparation: evaluator_preparation_type, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
+            ...
+    
+    def __init__(self, name: str, description: str, evaluator: Evaluator[preparation_type], directory: _saves.ResourcesDirectory) -> None:
+        super().__init__(name, description)
         
         self.__directory = directory
+        self.__evaluator = evaluator
         
     @property
     def directory(self) -> _saves.ResourcesDirectory:
         return self.__directory
+    
+    @property
+    def evaluator(self) -> Evaluator[preparation_type]:
+        return self.__evaluator
 
-    def save_remembering(self, remembering: ChatbotMemoryRegistry.Remembering) -> None:
+    def save_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
         resource = self.__directory.get_resource(str(remembering.uuid) + '.remembering')
         resource.write_content(_json.dumps({
             'date': remembering.date.timestamp(),
@@ -32,18 +48,18 @@ class ChatbotDirectoryMemoryRegistry(ChatbotMemoryRegistry, _abc.ABC):
             'sentence': remembering.data
         }))
         
-    def forget_remembering(self, remembering: ChatbotMemoryRegistry.Remembering) -> None:
+    def forget_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
         self.__directory.get_resource(str(remembering.uuid) + '.remembering').delete()
 
-    def get_all_rememberings(self) -> _T.Sequence[ChatbotMemoryRegistry.Remembering]:
-        rememberings: list[ChatbotMemoryRegistry.Remembering] = []
+    def get_all_rememberings(self) -> _T.Sequence[ChatbotMemory.Remembering]:
+        rememberings: list[ChatbotMemory.Remembering] = []
         
         for filename in self.__directory.list_files():
             if filename.endswith('.remembering') and not filename.startswith('.'):
                 resource = self.__directory.get_resource(filename)
                 data: _chatbot_directory_based_memory_file_object = _json.loads(resource.read_content())
                 
-                rememberings.append(ChatbotMemoryRegistry.Remembering(data['sentence'], data['context'], _datetime.datetime.fromtimestamp(data['date'])))
+                rememberings.append(ChatbotMemory.Remembering(data['sentence'], data['context'], _datetime.datetime.fromtimestamp(data['date'])))
         
         return rememberings
 
@@ -62,8 +78,15 @@ class ChatbotDirectoryMemoryRegistry(ChatbotMemoryRegistry, _abc.ABC):
             if _datetime.datetime.now() - remembering.date > max_time:
                 self.forget_remembering(remembering)
                 continue
-            
 
+    def get_linked_rememberings(self, preparation: preparation_type, discussion: ChatbotDiscussion, specs: ChatbotSpecs) -> _T.Sequence[ChatbotMemory.Remembering]:
+        rememberings: list[ChatbotMemory.Remembering] = []
+        
+        for remembering in self.get_all_rememberings():
+            if self.__evaluator.is_relevant(preparation, self.name, remembering, discussion, specs):
+                rememberings.append(remembering)
+                
+        return rememberings
 
 
 

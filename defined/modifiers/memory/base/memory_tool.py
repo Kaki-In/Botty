@@ -6,8 +6,8 @@ import datetime as _datetime
 from .memory import ChatbotMemory
 
 class ChatbotMemoryTool(_interactions.ChatCompletionTool, _abc.ABC):
-    def __init__(self, name: str, memory: ChatbotMemory, description: str | None = None) -> None:
-        super().__init__("memorize." + name, self.remember, description, False,
+    def __init__(self, name: str, memory: ChatbotMemory) -> None:
+        super().__init__("memorize." + name, self.remember, memory.description, False,
                          sentence_data = _interactions.ChatCompletionTool.Parameter({
                             'type': 'string',
                             'description': 'What should be remembered'
@@ -26,7 +26,7 @@ class ChatbotMemoryTool(_interactions.ChatCompletionTool, _abc.ABC):
 
     def remember(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str:
         memory = self.__memory
-        memory.registry.save_remembering(memory.registry.Remembering(kwargs['sentence_data'], kwargs['context'], _datetime.datetime.now()))
+        memory.save_remembering(memory.Remembering(kwargs['sentence_data'], kwargs['context'], _datetime.datetime.now()))
         
         return "element remembered into memory"
 
