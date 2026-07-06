@@ -6,6 +6,7 @@ import asyncio as _asyncio
 import traceback as _traceback
 import threading as _threading
 import queue as _queue
+import time as _time
 
 from ..objects import TelegramChatbotDiscussion, TelegramChatbotMessage
 from ..saves import TelegramBotSaver, TelegramDiscussionSaver
@@ -60,10 +61,14 @@ class TelegramBotHandler():
     
     def start(self) -> None:
         self.__thread.start()
+        
+        while not self.__app._initialized:
+            _time.sleep(0.1)
+            
+        self.__loop.create_task(self._display_ready())
     
     def run(self) -> None:
         _asyncio.set_event_loop(self.__loop)
-        self.__loop.create_task(self._display_ready())
         self.__app.run_polling(stop_signals=None)
         
     async def _display_ready(self) -> None:
