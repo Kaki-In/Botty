@@ -2,6 +2,7 @@ import abc as _abc
 import typing as _T
 import uuid as _uuid
 import datetime as _datetime
+import interactions as _interactions
 
 import ai.discussion as _ai_discussion
 import ai.chatbot_data as _ai_chatbot_data
@@ -75,7 +76,7 @@ class ChatbotMemory[preparation_type](_abc.ABC):
         ...
         
     @_abc.abstractmethod
-    def get_linked_rememberings(self, preparation: preparation_type, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> _T.Sequence[Remembering]:
+    def get_linked_rememberings(self, state: _interactions.CreatorsState, preparation: preparation_type, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> _T.Sequence[Remembering]:
         ...
     
     @_abc.abstractmethod

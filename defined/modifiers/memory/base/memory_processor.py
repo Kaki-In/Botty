@@ -24,6 +24,7 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
         self.__modifier = modifier
         self.__directory = directory
         self.__creator_factory = creator_factory
+        self.__state = _interactions.CreatorsState()
         
     @property
     def modifier(self) -> ChatbotMemoriesDiscussionModifier:
@@ -37,9 +38,13 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
     def creator_factory(self) -> _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]:
         return self.__creator_factory
     
+    @property
+    def creators_state(self) -> _interactions.CreatorsState:
+        return self.__state
+    
     def process_message(self, message: _ai_discussion.ChatbotMessage, from_discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> None:
         for preparator in self.__modifier.memory_preparators:
-            all_rememberings = preparator.get_rememberings_for(from_discussion, specs)
+            all_rememberings = preparator.get_rememberings_for(self.__state, from_discussion, specs)
             
             for memory_name, (memory, rememberings) in all_rememberings.items():
                 state = _interactions.CreatorsState()

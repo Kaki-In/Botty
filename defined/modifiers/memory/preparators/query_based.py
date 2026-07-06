@@ -5,7 +5,6 @@ from ..base import ChatbotMemoriesPreparator, ChatbotMemoryFactory
 
 import interactions as _interactions
 import typing as _T
-import saves as _saves
 
 class ChatbotMemoryQueryBasedPreparator(ChatbotMemoriesPreparator[str]):
     def __init__(self, examinator: _interactions.CreatorFactory[tuple[_ai_chatbot_data.ChatbotSpecs,_ai_discussion.ChatbotDiscussion, _T.Any], str], **memory_factories: tuple[ChatbotMemoryFactory[str], str]) -> None:
@@ -17,8 +16,8 @@ class ChatbotMemoryQueryBasedPreparator(ChatbotMemoriesPreparator[str]):
     def examinator(self) -> _interactions.CreatorFactory[tuple[_ai_chatbot_data.ChatbotSpecs,_ai_discussion.ChatbotDiscussion, _T.Any], str]:
         return self.__examinator
 
-    def _prepare_remembering(self, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> str:
-        return discussion.creators_state.create_from_factory(self.__examinator, (specs, discussion,
+    def _prepare_remembering(self, creators_state: _interactions.CreatorsState, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> str:
+        return creators_state.create_from_factory(self.__examinator, (specs, discussion,
             {
                 'type': 'string'
             }

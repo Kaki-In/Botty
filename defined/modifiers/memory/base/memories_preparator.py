@@ -3,6 +3,7 @@ from .memory_factory import ChatbotMemoryFactory
 
 import typing as _T
 import abc as _abc
+import interactions as _interactions
 
 import ai.discussion as _ai_discussion
 import ai.chatbot_data as _ai_chatbot_data
@@ -31,17 +32,17 @@ class ChatbotMemoriesPreparator[preparation_type](_abc.ABC):
         return self.__memories[name][0]
     
     @_abc.abstractmethod
-    def _prepare_remembering(self, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> preparation_type:
+    def _prepare_remembering(self, creators_state: _interactions.CreatorsState, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> preparation_type:
         ...
         
-    def get_rememberings_for(self, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> _T.Mapping[str, tuple[ChatbotMemory, _T.Sequence[ChatbotMemory.Remembering]]]:
-        preparation = self._prepare_remembering(discussion, specs)
+    def get_rememberings_for(self, creators_state: _interactions.CreatorsState, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> _T.Mapping[str, tuple[ChatbotMemory, _T.Sequence[ChatbotMemory.Remembering]]]:
+        preparation = self._prepare_remembering(creators_state, discussion, specs)
         
         rememberings: dict[str, tuple[ChatbotMemory, _T.Sequence[ChatbotMemory.Remembering]]] = {}
         
         for name, (factory, description) in self.__memories.items():
             memory = factory.get_memory(name, description, discussion, specs, discussion.creators_state)
-            rememberings[name] = (memory, memory.get_linked_rememberings(preparation, discussion, specs))
+            rememberings[name] = (memory, memory.get_linked_rememberings(creators_state, preparation, discussion, specs))
         
         return rememberings
 

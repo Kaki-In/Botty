@@ -29,7 +29,7 @@ class ChatbotMemoriesDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
         
     def modify_chat_completion(self, specs: _ai_chatbot_data.ChatbotSpecs, discussion: _ai_discussion.ChatbotDiscussion, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionDescription:
         for preparator in self.__preparators:
-            all_rememberings = preparator.get_rememberings_for(discussion, specs)
+            all_rememberings = preparator.get_rememberings_for(discussion.creators_state, discussion, specs)
         
             for memory_name, (memory, rememberings) in all_rememberings.items():
                 tool = ChatbotMemoryTool(memory_name, memory)

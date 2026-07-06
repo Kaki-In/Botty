@@ -18,7 +18,6 @@ class ChatbotVectorMemoryEvaluator(ChatbotDirectoryMemory.Evaluator[str], _abc.A
         super().__init__()
         
         self.__directory = cache_directory
-        
         self.__embedder_factory = embedder_factory
         
     @property
@@ -29,7 +28,7 @@ class ChatbotVectorMemoryEvaluator(ChatbotDirectoryMemory.Evaluator[str], _abc.A
     def embedder_factory(self) -> _interactions.CreatorFactory[str, _interactions.EmbeddingVector]:
         return self.__embedder_factory
     
-    def get_embedding(self, document: str, discussion: _ai_discussion.ChatbotDiscussion) -> _interactions.EmbeddingVector:
+    def get_embedding(self, state: _interactions.CreatorsState, document: str, discussion: _ai_discussion.ChatbotDiscussion) -> _interactions.EmbeddingVector:
         document_hash = _hashlib.sha256(document.encode()).hexdigest()
         
         datafile = _saves.ConfigurationFile[None | _T.Sequence[float]](self.__directory.get_directory('embeddings').get_resource(document_hash + '.json'), None)
@@ -37,20 +36,20 @@ class ChatbotVectorMemoryEvaluator(ChatbotDirectoryMemory.Evaluator[str], _abc.A
         data = datafile.read_configuration()
         
         if data is None:
-            vector = discussion.creators_state.create_from_factory(self.__embedder_factory, document_hash, self.__directory)
+            vector = state.create_from_factory(self.__embedder_factory, document_hash, self.__directory)
             datafile.overwrite_with(vector.as_list())
         else:
             vector = _interactions.EmbeddingVector.from_list(data)
         
         return vector
     
-    def is_relevant(self, preparation: str, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
+    def is_relevant(self, state: _interactions.CreatorsState, preparation: str, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
         configuration = _saves.ConfigurationFile[_vector_based_memory_configuration_object](self.__directory.get_directory('memory:' + memory_name).get_resource('settings.conf'), {
             'threshold': 0.5
         }).read_configuration()
         
-        embedded_query = self.get_embedding(preparation, discussion)
-        embedded_document = self.get_embedding(str(remembering), discussion)
+        embedded_query = self.get_embedding(state, preparation, discussion)
+        embedded_document = self.get_embedding(state, str(remembering), discussion)
         
         return _interactions.EmbeddingVector.similarity_between(embedded_query, embedded_document) > configuration['threshold']
 

@@ -8,6 +8,7 @@ import abc as _abc
 import saves as _saves
 import datetime as _datetime
 import json as _json
+import interactions as _interactions
 
 import ai.discussion as _ai_discussion
 import ai.chatbot_data as _ai_chatbot_data
@@ -23,7 +24,7 @@ class _chatbot_directory_based_memory_configuration_object(_T.TypedDict):
 class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
     class Evaluator[evaluator_preparation_type](_abc.ABC):
         @_abc.abstractmethod
-        def is_relevant(self, preparation: evaluator_preparation_type, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
+        def is_relevant(self, state: _interactions.CreatorsState, preparation: evaluator_preparation_type, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
             ...
     
     def __init__(self, name: str, description: str, evaluator: Evaluator[preparation_type], directory: _saves.ResourcesDirectory) -> None:
@@ -79,11 +80,11 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
                 self.forget_remembering(remembering)
                 continue
 
-    def get_linked_rememberings(self, preparation: preparation_type, discussion: ChatbotDiscussion, specs: ChatbotSpecs) -> _T.Sequence[ChatbotMemory.Remembering]:
+    def get_linked_rememberings(self, state: _interactions.CreatorsState, preparation: preparation_type, discussion: ChatbotDiscussion, specs: ChatbotSpecs) -> _T.Sequence[ChatbotMemory.Remembering]:
         rememberings: list[ChatbotMemory.Remembering] = []
         
         for remembering in self.get_all_rememberings():
-            if self.__evaluator.is_relevant(preparation, self.name, remembering, discussion, specs):
+            if self.__evaluator.is_relevant(state, preparation, self.name, remembering, discussion, specs):
                 rememberings.append(remembering)
                 
         return rememberings
