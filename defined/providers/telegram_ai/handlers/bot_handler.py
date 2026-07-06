@@ -63,7 +63,7 @@ class TelegramBotHandler():
     
     def run(self) -> None:
         _asyncio.set_event_loop(self.__loop)
-        _asyncio.create_task(self._display_ready())
+        self.__loop.create_task(self._display_ready())
         self.__app.run_polling(stop_signals=None)
         
     async def _display_ready(self) -> None:
