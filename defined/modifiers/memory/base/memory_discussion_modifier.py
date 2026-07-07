@@ -38,7 +38,7 @@ class ChatbotMemoriesDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
                     description = description.adding_tools(tool)
                 
                 if rememberings:
-                    description = description.adding_message_after(
+                    description = description.adding_message_just_after_system_prompt(
                         _interactions.ChatCompletionMessage(
                             'system',
                             f"There are some rememberings you have from memory {memory_name!r} : \n\n" + '\n\n --- \n\n'.join(str(remembering) for remembering in rememberings)
