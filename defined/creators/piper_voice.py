@@ -18,14 +18,14 @@ class _piper_voice_configuration_object(_T.TypedDict):
 class PiperVoiceFactory(_interactions.CreatorFactory[str, _pydub.AudioSegment]):
     def build_from(self, directory: _saves.ResourcesDirectory) -> 'PiperVoice':
         config = _saves.ConfigurationFile[_piper_voice_configuration_object](directory.get_resource('config.json'), {
-                'voicename': '',
-                'speaker_id': 0,
-                'length_scale': None,
-                'noise_scale': None,
-                'noise_w_scale': None,
-                'normalize_audio': False,
-                'volume': 1
-            }).read_configuration()
+            'voicename': '',
+            'speaker_id': 0,
+            'length_scale': None,
+            'noise_scale': None,
+            'noise_w_scale': None,
+            'normalize_audio': False,
+            'volume': 1
+        }).read_configuration()
 
         return PiperVoice(config['voicename'], _piper.SynthesisConfig(
             speaker_id = config['speaker_id'],

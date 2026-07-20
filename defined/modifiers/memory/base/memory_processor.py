@@ -25,6 +25,9 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
         self.__directory = directory
         self.__creator_factory = creator_factory
         self.__state = _interactions.CreatorsState()
+        self.__configuration = _saves.ConfigurationFile[_remembering_configuration_object](self.__directory.get_resource('config.json'), {
+            'load_messages_back': 10
+        })
         
     @property
     def modifier(self) -> ChatbotMemoriesDiscussionModifier:
@@ -78,9 +81,7 @@ You must include new rememberings into a JSON array containing objects with two 
 - `context` : any context element attached to this remembering
 """.format(bot_name = specs.name, name = memory_name, description = memory.description))
                     
-                configuration = _saves.ConfigurationFile[_remembering_configuration_object](self.__directory.get_resource('config.json'), {
-                    'load_messages_back': 10
-                }).read_configuration()
+                configuration = self.__configuration.read_configuration()
                 
                 discussion_messages = "Here are the discussion messages : \n\n"
                 

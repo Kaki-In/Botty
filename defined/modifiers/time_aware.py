@@ -15,13 +15,16 @@ class _time_aware_configuration_object(_T.TypedDict):
     intro_text: str
 
 class TimeAwareChatbotModifier(_ai_chatbots.ChatbotDiscussionModifier):
+    def __init__(self) -> None:
+        super().__init__()
+    
     def get_configuration_from(self, specs: _ai_chatbot_data.ChatbotSpecs) -> _time_aware_configuration_object:
         return _saves.ConfigurationFile[_time_aware_configuration_object](specs.configuration_directory.get_directory('time_aware').get_resource('conf.json'), {
-                'format': "yyyy-MM-dd 'at' HH:mm", 
-                "utc": [0, 0],
-                "locale": "en_US.utf-8",
-                "intro_text": "Current time and date are : "
-            }).read_configuration()
+            'format': "yyyy-MM-dd 'at' HH:mm", 
+            "utc": [0, 0],
+            "locale": "en_US.utf-8",
+            "intro_text": "Current time and date are : "
+        }).read_configuration()
     
     def format_datetime(self, datetime: _datetime.datetime, configuration: _time_aware_configuration_object) -> str:
         hours, minutes = configuration['utc']

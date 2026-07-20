@@ -9,7 +9,6 @@ import local_utils.images as _local_utils_images
 import io as _io
 import saves as _saves
 
-
 class DiscordChatbotImageMessage(DiscordChatbotMessage, name="image"):
     @classmethod
     def class_get_json_schema(cls) -> _T.Any:
@@ -47,11 +46,20 @@ class DiscordChatbotImageMessage(DiscordChatbotMessage, name="image"):
     @classmethod
     async def load_from_llm(cls, channel: _discord.TextChannel | _discord.DMChannel, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_discord.Message, _T.Any]:
         assert isinstance(data, dict)
+        
+        assert channel._state.user is not None
+        
+        bot_avatar = channel._state.user.avatar
+        
+        if bot_avatar is None:
+            avatar_image = None
+        else:
+            avatar_image = await _local_utils_images.from_bytes(await bot_avatar.read())
 
         image = await creators.async_create_under_state(
             creators_state,
-            data['deep_image_description'],
-            str,
+            _interactions.ImageDescription(data['deep_image_description'], avatar_image),
+            _interactions.ImageDescription,
             _local_utils_images.Image,
             cls.get_bot_discord_configuration(specs).get_directory('image_creation')
         )

@@ -39,28 +39,22 @@ class StableDiffusionImageGeneratorConfiguration():
                     "model": 'ip-adapter-faceid-plusv2_sd15 [6e14fc1a]'
                 }
             })
-        self.__face_asset = directory.get_resource('face.png')
     
     @property
     def configuration_file(self) -> _saves.ConfigurationFile:
         return self.__configuration_file
-    
-    @property
-    def face_resource(self) -> _saves.ResourceFile:
-        return self.__face_asset
 
 class StableDiffusionImageGeneratorFactory(_interactions.CreatorFactory[_interactions.ImageSettings, _local_utils_images.Image]):
     def build_from(self, directory: _saves.ResourcesDirectory) -> _interactions.Creator[_interactions.ImageSettings, _local_utils_images.Image]:
         configuration = StableDiffusionImageGeneratorConfiguration(directory)
 
-        return StableDiffusionImageGenerator(configuration.configuration_file.read_configuration(), _local_utils_images.long_from_bytes(configuration.face_resource.read_raw()) if configuration.face_resource.exists else None)
+        return StableDiffusionImageGenerator(configuration.configuration_file.read_configuration())
 
 class StableDiffusionImageGenerator(_interactions.Creator[_interactions.ImageSettings, _local_utils_images.Image]):
-    def __init__(self, base_configuration: _stable_diffusion_image_generation_configuration_file_object, face_image: _T.Optional[_local_utils_images.Image]) -> None:
+    def __init__(self, base_configuration: _stable_diffusion_image_generation_configuration_file_object) -> None:
         super().__init__()
 
         self.__base_configuration = base_configuration
-        self.__face_image = face_image
         self.__current_client = _httpx.Client()
 
     def on_interruption(self) -> None:
@@ -86,11 +80,11 @@ class StableDiffusionImageGenerator(_interactions.Creator[_interactions.ImageSet
                         "controlnet": {
                             "args": [
                                 {
-                                    "enabled": description.is_self_face and self.__face_image is not None,
+                                    "enabled": description.requires_controlnet and description.control_net_image is not None,
                                     "module": self.__base_configuration['face']['module'],
                                     "model": self.__base_configuration['face']['model'],
                                     "weight": self.__base_configuration['face']['weight'],
-                                    "image": str(self.__face_image),
+                                    "image": str(description.control_net_image),
                                     "resize_mode": 1,
                                     "lowvram": False,
                                     "processor_res": 512,

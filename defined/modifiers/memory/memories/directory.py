@@ -19,12 +19,14 @@ class _chatbot_directory_based_memory_file_object(_T.TypedDict):
     date: float
 
 class _chatbot_directory_based_memory_configuration_object(_T.TypedDict):
+    top_k: int
+    threshold: float
     lost_after_days: int
 
 class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
     class Evaluator[evaluator_preparation_type](_abc.ABC):
         @_abc.abstractmethod
-        def is_relevant(self, state: _interactions.CreatorsState, preparation: evaluator_preparation_type, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
+        def relevancy(self, state: _interactions.CreatorsState, preparation: evaluator_preparation_type, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> float:
             ...
     
     def __init__(self, name: str, description: str, evaluator: Evaluator[preparation_type], directory: _saves.ResourcesDirectory) -> None:
@@ -32,6 +34,11 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
         
         self.__directory = directory
         self.__evaluator = evaluator
+        self.__configuration = _saves.ConfigurationFile[_chatbot_directory_based_memory_configuration_object](self.__directory.get_resource('settings.json'), {
+            'top_k': -1,
+            'threshold': 0.5,
+            'lost_after_days': 30
+        })
         
     @property
     def directory(self) -> _saves.ResourcesDirectory:
@@ -40,7 +47,7 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
     @property
     def evaluator(self) -> Evaluator[preparation_type]:
         return self.__evaluator
-
+    
     def save_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
         resource = self.__directory.get_resource(str(remembering.uuid) + '.remembering')
         resource.write_content(_json.dumps({
@@ -69,9 +76,7 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
             self.__directory.get_resource(filename).delete()
 
     def delete_useless_elements(self) -> None:
-        days_count = _saves.ConfigurationFile[_chatbot_directory_based_memory_configuration_object](self.__directory.get_resource('settings.json'), {
-            'lost_after_days': 30
-        }).read_configuration()['lost_after_days']
+        days_count = self.__configuration.read_configuration()['lost_after_days']
         
         max_time = _datetime.timedelta(days=days_count)
         
@@ -81,13 +86,16 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
                 continue
 
     def get_linked_rememberings(self, state: _interactions.CreatorsState, preparation: preparation_type, discussion: ChatbotDiscussion, specs: ChatbotSpecs) -> _T.Sequence[ChatbotMemory.Remembering]:
-        rememberings: list[ChatbotMemory.Remembering] = []
+        rememberings: list[tuple[float, ChatbotMemory.Remembering]] = []
+        
+        configuration = self.__configuration.read_configuration()
         
         for remembering in self.get_all_rememberings():
-            if self.__evaluator.is_relevant(state, preparation, self.name, remembering, discussion, specs):
-                rememberings.append(remembering)
-                
-        return rememberings
+            rememberings.append((self.__evaluator.relevancy(state, preparation, self.name, remembering, discussion, specs), remembering))
+        
+        rememberings.sort(key = lambda r: r[0])
+            
+        return [r[1] for r in rememberings if r[0] > configuration['threshold']][:configuration['top_k']]
 
 
 

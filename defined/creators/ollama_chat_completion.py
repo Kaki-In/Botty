@@ -8,10 +8,13 @@ import datetime as _datetime
 import asyncio as _asyncio
 import threading as _threading
 
+import uuid as _uuid
+
 class _ollama_file_configuration_object(_T.TypedDict):
     hostname: str
     model_name: str
     options: dict[str, _T.Any]
+    supports_multimodal: bool
 
 class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
     def build_from(self, directory: _saves.ResourcesDirectory) -> 'OllamaChatCompletor':
@@ -23,16 +26,17 @@ class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.Chat
                 'top_p': 1,
                 'top_k': 256,
                 'temperature': 0.5
-            }
+            },
+            'supports_multimodal': False
         })
         config = conf_file.read_configuration()
 
         client = _ollama.AsyncClient(config['hostname'])
 
-        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), directory)
+        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), config.get('supports_multimodal') or False)
 
 class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
-    def __init__(self, client: _ollama.AsyncClient, model_name: str, base_options: _ollama.Options, directory: _saves.ResourcesDirectory) -> None:
+    def __init__(self, client: _ollama.AsyncClient, model_name: str, base_options: _ollama.Options, supports_multimodal: bool) -> None:
         super().__init__()
 
         self.__client = client
@@ -42,6 +46,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         self.__base_options = base_options
         self.__current_task: _asyncio.Task | None = None
         self.__loop = _asyncio.new_event_loop()
+        self.__supports_multimodal = supports_multimodal
 
         self.thread = _threading.Thread(target=self._start_loop, daemon=True)
         self.thread.start()
@@ -169,7 +174,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 ]))
                 messages.append(_ollama.Message(role='tool', content=message.result))
             else:
-                messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images]))
+                messages.append(_ollama.Message(role=message.role, content=message.content, images = [_ollama.Image(value=bytes(image)) for image in message.images] if self.__supports_multimodal else None))
 
         return messages, tools or None, schema
 

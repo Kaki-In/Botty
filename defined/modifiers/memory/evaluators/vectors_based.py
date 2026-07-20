@@ -10,9 +10,6 @@ import ai.chatbot_data as _ai_chatbot_data
 from ..memories import ChatbotDirectoryMemory
 from ..base import ChatbotMemory
 
-class _vector_based_memory_configuration_object(_T.TypedDict):
-    threshold: float
-
 class ChatbotVectorMemoryEvaluator(ChatbotDirectoryMemory.Evaluator[str], _abc.ABC):
     def __init__(self, cache_directory: _saves.ResourcesDirectory, embedder_factory: _interactions.CreatorFactory[str, _interactions.EmbeddingVector]) -> None:
         super().__init__()
@@ -43,13 +40,9 @@ class ChatbotVectorMemoryEvaluator(ChatbotDirectoryMemory.Evaluator[str], _abc.A
         
         return vector
     
-    def is_relevant(self, state: _interactions.CreatorsState, preparation: str, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> bool:
-        configuration = _saves.ConfigurationFile[_vector_based_memory_configuration_object](self.__directory.get_directory('memory:' + memory_name).get_resource('settings.conf'), {
-            'threshold': 0.5
-        }).read_configuration()
-        
+    def relevancy(self, state: _interactions.CreatorsState, preparation: str, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> float:
         embedded_query = self.get_embedding(state, preparation, discussion)
         embedded_document = self.get_embedding(state, str(remembering), discussion)
         
-        return _interactions.EmbeddingVector.similarity_between(embedded_query, embedded_document) > configuration['threshold']
+        return _interactions.EmbeddingVector.similarity_between(embedded_query, embedded_document)
 

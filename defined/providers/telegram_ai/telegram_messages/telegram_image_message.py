@@ -44,9 +44,22 @@ class TelegramChatbotImageMessage(TelegramChatbotMessage, name="image"):
     @classmethod
     async def load_from_llm(cls, chat: _telegram.Chat, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_telegram.Message, _T.Any]:
         assert isinstance(data, dict)
+        
+        bot_user_photos = await (await chat.get_bot().getMe()).get_profile_photos()
+        
+        if bot_user_photos.total_count == 0:
+            avatar_image = None
+        else:
+            photo = bot_user_photos.photos[0][-1]
+            file = await chat.get_bot().get_file(photo.file_id)
+            
+            buf = _io.BytesIO()
+            await file.download_to_memory(buf)
+            
+            avatar_image = await _local_utils_images.from_bytes(buf.getvalue())
 
         with TelegramActionWaiting(chat, _telegram_constants.ChatAction.UPLOAD_PHOTO):
-            image = await creators.async_create_under_state(creators_state, data['deep_image_description'], str, _local_utils_images.Image, cls.get_bot_tg_configuration(specs).get_directory('image_creation'))
+            image = await creators.async_create_under_state(creators_state, _interactions.ImageDescription(data['deep_image_description'], avatar_image), _interactions.ImageDescription, _local_utils_images.Image, cls.get_bot_tg_configuration(specs).get_directory('image_creation'))
 
         photo_file = _io.BytesIO(bytes(image))
 
