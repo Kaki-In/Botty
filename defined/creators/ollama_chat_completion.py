@@ -7,6 +7,7 @@ import saves as _saves
 import datetime as _datetime
 import asyncio as _asyncio
 import threading as _threading
+import concurrent.futures as _concurrent_futures
 
 import uuid as _uuid
 
@@ -31,53 +32,19 @@ class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.Chat
         })
         config = conf_file.read_configuration()
 
-        client = _ollama.AsyncClient(config['hostname'])
+        client = _ollama.Client(config['hostname'])
 
         return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), config.get('supports_multimodal') or False)
 
 class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
-    def __init__(self, client: _ollama.AsyncClient, model_name: str, base_options: _ollama.Options, supports_multimodal: bool) -> None:
+    def __init__(self, client: _ollama.Client, model_name: str, base_options: _ollama.Options, supports_multimodal: bool) -> None:
         super().__init__()
 
         self.__client = client
-#        client.chat(model_name, options=base_options)
-
         self.__model_name = model_name
         self.__base_options = base_options
-        self.__current_task: _asyncio.Task | None = None
-        self.__loop = _asyncio.new_event_loop()
         self.__supports_multimodal = supports_multimodal
 
-        self.thread = _threading.Thread(target=self._start_loop, daemon=True)
-        self.thread.start()
-
-    def _start_loop(self):
-        _asyncio.set_event_loop(self.__loop)
-        self.__loop.run_forever()
-
-    def on_interruption(self) -> None:
-        if self.__current_task is not None:
-            self.__current_task.cancel()
-            
-    def on_finish(self) -> None:
-        if self.__loop.is_running():
-            self.__loop.call_soon_threadsafe(self.__loop.stop)
-            self.thread.join()
-            
-        self.__loop.close()
-        
-    def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
-        try:
-            result = _asyncio.run_coroutine_threadsafe(self.chat(description), self.__loop).result()
-            
-            for post_processor in description.post_processors:
-                post_processor(result)
-                
-            return result
-                
-        except (_httpx.CloseError, _asyncio.CancelledError):
-            raise _interactions.InteractionInterruptionError()
-    
     def get_messages_tools_json(self, description: _interactions.ChatCompletionDescription, runtime_tools_results: _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]) -> tuple[_T.Sequence[_ollama.Message], None | _T.Sequence[_ollama.Tool], _T.Any]:
         usable_tools = [tool for tool in description.tools if not (tool.is_ephemeral and tool.name in [result.tool_name for result in runtime_tools_results])]
 
@@ -178,20 +145,19 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
 
         return messages, tools or None, schema
 
-    async def chat(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
-        self.__current_task = _asyncio.current_task()
-        
+    def chat(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
         called_tools: list[_interactions.ChatCompletionTool.ChatCompletionToolResult] = []
+        
         while True:
+            self.raise_interruption_if_needed()
+            
             edited_description = description.get_edited()
-            
             tools_by_name = {tool.name: tool for tool in edited_description.tools}
-            
             messages, tools, schema = self.get_messages_tools_json(edited_description, description.last_tools_calls)
             
             self.raise_interruption_if_needed()
             
-            response = await self.__client.chat(
+            response = self.__stream_chat(
                 model=self.__model_name,
                 messages=messages,
                 options=self.__base_options,
@@ -264,4 +230,24 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 
                 description = description.adding_message_after(tool_result)
 
-            
+    def __stream_chat(self, **kwargs) -> _ollama.ChatResponse:
+        accumulated_content = ""
+        last_chunk = None
+
+        for chunk in self.__client.chat(**kwargs, stream=True):
+            self.raise_interruption_if_needed()
+
+            if chunk.message.content:
+                accumulated_content += chunk.message.content
+
+            last_chunk = chunk
+
+        if last_chunk is None:
+            raise RuntimeError("Le stream n'a renvoyé aucun chunk")
+
+        last_chunk.message.content = accumulated_content
+        return last_chunk
+
+    def _create_object_from(self, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionResult:
+        return self.chat(description)
+

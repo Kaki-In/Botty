@@ -1,4 +1,4 @@
-from ..objects import DiscordChatbotMessage
+from ..objects import DiscordChatbotMessage, DiscordDiscussionTarget
 
 import interactions as _interactions
 import ai.chatbot_data as _ai_chatbot_data
@@ -40,7 +40,7 @@ class DiscordChatbotTextualMessage(DiscordChatbotMessage, name="text"):
         return 'Sends a simple raw text. Example : {"type": "text", "data": "Hello!"}'
 
     @classmethod
-    async def load_from_llm(cls, channel: _discord.TextChannel | _discord.DMChannel, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_discord.Message, _T.Any]:
+    async def load_from_llm(cls, target: DiscordDiscussionTarget, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_discord.Message, _T.Any]:
         assert isinstance(data, str), repr(data)
 
         messages_configuration = _saves.ConfigurationFile[_discord_textual_messages_config_object](cls.get_bot_discord_configuration(specs).get_resource('config.json'), {
@@ -58,7 +58,7 @@ class DiscordChatbotTextualMessage(DiscordChatbotMessage, name="text"):
             sleeper_directory
         )
 
-        async with channel.typing():
+        async with target.channel.typing():
             await creators.async_create_under_state(
                 creators_state,
                 _random.uniform(messages_configuration['per_char_duration']['min_value'], messages_configuration['per_char_duration']['max_value']) * len(data),
@@ -68,11 +68,11 @@ class DiscordChatbotTextualMessage(DiscordChatbotMessage, name="text"):
             )
 
         if answer_to:
-            reference = _discord.MessageReference(message_id=answer_to, channel_id=channel.id)
+            reference = _discord.MessageReference(message_id=answer_to, channel_id=target.channel.id)
             
-            new_message = await channel.send(data, reference=reference)
+            new_message = await target.channel.send(data, reference=reference)
         else:
-            new_message = await channel.send(data)
+            new_message = await target.channel.send(data)
             
         return new_message, None
 

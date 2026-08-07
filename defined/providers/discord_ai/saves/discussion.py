@@ -10,7 +10,8 @@ import uuid as _uuid
 from .message import DiscordMessageSaver
 
 class _discord_chatbot_discussion_object(_T.TypedDict):
-    channel: _discord.TextChannel | _discord.DMChannel
+    target_id: int
+    is_private: bool
     read: bool
     current_tool_message_id: int | None
 
@@ -22,29 +23,20 @@ class DiscordDiscussionPropertiesSaver():
     def exists(self) -> bool:
         return self.__file.exists
 
-    def read_properties(self, client: _T.Optional[_discord.Client] = None) -> _discord_chatbot_discussion_object:
+    def read_properties(self) -> _discord_chatbot_discussion_object:
         data = _json.loads(self.__file.read_content())
-
-        channel = None
-        if client is not None:
-            channel = client.get_channel(data['channel_id'])
-            assert channel is not None, f"Channel {data['channel_id']} introuvable dans le cache du client"
-
-        return {
-            'channel': channel,             # type: ignore[return-value]
-            'read': data['read'],
-            'current_tool_message_id': data['current_tool_message_id']
-        }
+        return data
         
     def write_properties(
         self,
-        channel: _discord.TextChannel | _discord.DMChannel,
+        target_id: int,
+        is_private: bool,
         read: bool,
         current_tool_message_id: int | None
     ) -> None:
         self.__file.write_content(_json.dumps({
-            'channel_id': channel.id,
-            'guild_id': channel.guild.id if isinstance(channel, _discord.TextChannel) else None,
+            'target_id': target_id,
+            'is_private': is_private,
             'read': read,
             'current_tool_message_id': current_tool_message_id
         }, indent=2))

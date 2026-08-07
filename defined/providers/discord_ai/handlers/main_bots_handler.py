@@ -43,7 +43,7 @@ class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChat
             if bot.chatbot_specs == specs:
                 return bot
 
-        new_bot = DiscordBotHandler(self._get_new_messages_queues(specs), specs, self._create_creators_map(), _interactions.CreatorsState(), self.__message_methods)
+        new_bot = DiscordBotHandler(self._get_new_messages_queues(specs), specs, self._create_creators_map(), self.__message_methods)
         self.__bots.append(new_bot)
         return new_bot
 

@@ -8,3 +8,4 @@ from .whisper_listener import *
 from .simply_sleep import *
 from .embedder import *
 from .discussion_examinator import *
+from .lm_studio_chat_completion import *

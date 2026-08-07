@@ -15,7 +15,7 @@ import interactions as _interactions
 import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data
 
 class TelegramBotHandler():
-    def __init__(self, created_messages_queue: _queue.Queue[tuple[TelegramChatbotMessage, TelegramChatbotDiscussion]], specs: _ai_chatbot_data.ChatbotSpecs, creators_map: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], directly_start: bool=True) -> None:
+    def __init__(self, created_messages_queue: _queue.Queue[tuple[TelegramChatbotMessage, TelegramChatbotDiscussion]], specs: _ai_chatbot_data.ChatbotSpecs, creators_map: _interactions.CreatorsMap, message_methods: _T.Sequence[_T.Type[TelegramChatbotMessage]], directly_start: bool=True) -> None:
         tg_directory = specs.directory.get_directory('telegram')
         tg_token_file = tg_directory.get_resource('token')
 
@@ -27,8 +27,9 @@ class TelegramBotHandler():
 
         self.__directory = TelegramBotSaver(tg_directory.get_directory('discussions'))
         self.__creators_map = creators_map
-        self.__creators_state = creators_state
         self.__message_methods = list(message_methods)
+        
+        self.__states: dict[int, _interactions.CreatorsState] = {}
 
         self.__chatbot_specs = specs
 
@@ -46,6 +47,12 @@ class TelegramBotHandler():
 
         if directly_start:
             self.start()
+            
+    def get_state_for_discussion(self, discussion_id: int) -> _interactions.CreatorsState:
+        if not discussion_id in self.__states:
+            self.__states[discussion_id] = _interactions.CreatorsState()
+            
+        return self.__states[discussion_id]
 
     @property
     def chatbot_specs(self) -> _ai_chatbot_data.ChatbotSpecs:
@@ -76,7 +83,9 @@ class TelegramBotHandler():
     
     def stop(self, join:bool = False):
         self.__loop.stop()
-        self.__creators_state.interrupt_all()
+        
+        for state in self.__states.values():
+            state.interrupt_all()
         
         if join:
             try: self.__thread.join()
@@ -91,7 +100,7 @@ class TelegramBotHandler():
         if not saver.properties_saver.exists:
             saver.properties_saver.write_properties(chat, False, None)
 
-        return TelegramChatbotDiscussion(self.__created_messages_queue, self.__message_methods, self.__loop, self.__creators_map, self.__creators_state, chat.get_bot(), saver)
+        return TelegramChatbotDiscussion(self.__created_messages_queue, self.__message_methods, self.__loop, self.__creators_map, self.get_state_for_discussion(chat.id), chat.get_bot(), saver)
 
     def delete_discussion(self, discussion: TelegramChatbotDiscussion) -> None:
         saver = self._get_discussion_saver(discussion.chat)
@@ -157,7 +166,7 @@ class TelegramBotHandler():
             return []
 
         for discussion_saver in self.__directory.discussions_savers:
-            discussion = TelegramChatbotDiscussion(self.__created_messages_queue, self.__message_methods, self.__loop, self.__creators_map, self.__creators_state, self.__app.bot, discussion_saver)
+            discussion = TelegramChatbotDiscussion(self.__created_messages_queue, self.__message_methods, self.__loop, self.__creators_map, self.get_state_for_discussion(discussion_saver.properties_saver.read_properties()['chat'].id), self.__app.bot, discussion_saver)
 
             if len(discussion.messages) > 0 or discussion.chat.type == _telegram_constants.ChatType.PRIVATE:
                 discussions.append(discussion)

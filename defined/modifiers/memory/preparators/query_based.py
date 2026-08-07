@@ -21,6 +21,6 @@ class ChatbotMemoryQueryBasedPreparator(ChatbotMemoriesPreparator[str]):
             {
                 'type': 'string'
             }
-        ), specs.configuration_directory.get_directory('memory_query_prepartor'))
+        ), specs.configuration_directory.get_directory('memory_query_preparator'))
 
 

@@ -1,4 +1,5 @@
 from .discord_sender import DiscordChatbotSender
+from .discussion_target import DiscordDiscussionTarget
 
 import interactions as _interactions
 import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data
@@ -58,7 +59,7 @@ class DiscordChatbotMessage(_ai_discussion.ChatbotMessage[DiscordChatbotSender],
 
     @classmethod
     @_abc.abstractmethod
-    async def load_from_llm(cls, channel: _discord.TextChannel | _discord.DMChannel, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None,
+    async def load_from_llm(cls, target: DiscordDiscussionTarget, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None,
     ) -> tuple[_discord.Message, _T.Any]:
         ...
 
@@ -133,3 +134,4 @@ class DiscordChatbotMessage(_ai_discussion.ChatbotMessage[DiscordChatbotSender],
     @_abc.abstractmethod
     def export_data_to_llm(self, specs: _ai_chatbot_data.ChatbotSpecs, images: list[_local_utils_images.Image]) -> _T.Any:
         ...
+

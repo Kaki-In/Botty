@@ -141,12 +141,10 @@ class RealisticChatbot(_ai_chatbots.Chatbot):
                     found_discussion = True
                     
                     try:
-                        print(self.name, "answering to discussion", discussion)
                         self.answer_to_discussion(discussion, force and not configuration['never_force_answer'])
                         discussion.mark_as_read()
-                        print(self.name, "answered to discussion")
                     except _interactions.InteractionInterruptionError:
-                        print(self.name, "has been interrupted while responding")
+                        pass
                     except Exception:
                         print(self.name, "got an error answering")
                         traceback.print_exc()

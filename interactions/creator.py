@@ -28,7 +28,6 @@ class Creator[InteractionDescriptorType, InteractionType](_abc.ABC):
         ...
 
     def interrupt(self) -> None:
-        print("Interrupting", self)
         self.on_interruption()
         self.__should_interrupt = True
     

@@ -1,4 +1,4 @@
-from ..objects import DiscordChatbotMessage
+from ..objects import DiscordChatbotMessage, DiscordDiscussionTarget
 
 import interactions as _interactions
 import ai.chatbot_data as _ai_chatbot_data
@@ -44,12 +44,12 @@ class DiscordChatbotImageMessage(DiscordChatbotMessage, name="image"):
         )
 
     @classmethod
-    async def load_from_llm(cls, channel: _discord.TextChannel | _discord.DMChannel, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_discord.Message, _T.Any]:
+    async def load_from_llm(cls, target: DiscordDiscussionTarget, specs: _ai_chatbot_data.ChatbotSpecs, creators: _interactions.CreatorsMap, creators_state: _interactions.CreatorsState, data, answer_to: _T.Optional[int] = None) -> tuple[_discord.Message, _T.Any]:
         assert isinstance(data, dict)
         
-        assert channel._state.user is not None
+        assert target.descriptor._state.user is not None
         
-        bot_avatar = channel._state.user.avatar
+        bot_avatar = target.descriptor._state.user.avatar
         
         if bot_avatar is None:
             avatar_image = None
@@ -73,10 +73,10 @@ class DiscordChatbotImageMessage(DiscordChatbotMessage, name="image"):
         if answer_to is not None:
             kwargs['reference'] = _discord.MessageReference(
                 message_id=answer_to,
-                channel_id=channel.id
+                channel_id=target.channel.id
             )
 
-        sent_message = await channel.send(**kwargs)
+        sent_message = await target.channel.send(**kwargs)
 
         return sent_message, {
             'image': image,

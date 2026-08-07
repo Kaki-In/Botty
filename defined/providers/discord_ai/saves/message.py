@@ -17,11 +17,8 @@ class DiscordMessagePropertiesFile():
         data = _json.loads(self.__resource.read_content())
         return data['message_id']
 
-    def read_message_properties(self, client: _discord.Client) -> _discord_properties_file_object:
+    def read_message_properties(self, client: _discord.Client, channel: _discord.TextChannel | _discord.DMChannel) -> _discord_properties_file_object:
         data = _json.loads(self.__resource.read_content())
-
-        channel = client.get_channel(data['channel_id'])
-        assert channel is not None, f"Channel {data['channel_id']} introuvable dans le cache du client"
 
         message = _discord.Message(
             state=client._connection,
@@ -36,8 +33,6 @@ class DiscordMessagePropertiesFile():
 
     def write_message_properties(self, message: _discord.Message, message_type: str) -> None:
         self.__resource.write_content(_json.dumps({
-            'channel_id': message.channel.id,
-            'guild_id': message.guild.id if message.guild else None,
             'message_id': message.id,
             'message_data': {
                 'id': str(message.id),

@@ -1,4 +1,5 @@
 from .discord_message import DiscordChatbotMessage
+from .discussion_target import DiscordDiscussionTarget
 
 from ..saves import DiscordDiscussionSaver
 
@@ -26,12 +27,13 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         creators_state: _interactions.CreatorsState,
         client: _discord.Client,
         directory: DiscordDiscussionSaver,
+        target: DiscordDiscussionTarget
     ) -> None:
-        discussion_properties = directory.properties_saver.read_properties(client)
+        discussion_properties = directory.properties_saver.read_properties()
 
-        super().__init__('discord'+str(discussion_properties['channel'].id), created_messages_queue, creators_state)
+        super().__init__('discord-'+('u' if discussion_properties['is_private'] else 'd')+str(discussion_properties['target_id']), created_messages_queue, creators_state)
 
-        self.__channel: _discord.TextChannel | _discord.DMChannel = discussion_properties['channel']
+        self.__target = target
         self.__client = client
         self.__message_methods = message_methods
         self.__loop = loop
@@ -39,7 +41,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         self.__messages: list[DiscordChatbotMessage] = []
 
         for message_saver in directory.get_messages_savers():
-            message_properties = message_saver.properties_file.read_message_properties(client)
+            message_properties = message_saver.properties_file.read_message_properties(client, target.channel)
 
             for message_method in self.__message_methods:
                 if message_method.class_get_messages_typename() == message_properties['message_type']:
@@ -52,8 +54,16 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         return not self.__directory.properties_saver.read_properties()['read']
 
     @property
+    def target(self) -> DiscordDiscussionTarget:
+        return self.__target
+    
+    @property
     def channel(self) -> _discord.TextChannel | _discord.DMChannel:
-        return self.__channel
+        return self.__target.channel
+    
+    @property
+    def discussion_descriptor(self) -> _discord.TextChannel | _discord.User:
+        return self.__target.descriptor
 
     @property
     def message_methods(self) -> _T.Sequence[_T.Type[DiscordChatbotMessage]]:
@@ -73,15 +83,17 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
     
     async def get_current_tool_message(self) -> _discord.Message | None:
         message_id = self.__directory.properties_saver.read_properties()['current_tool_message_id']
+        
         if message_id is None:
             return None
         try:
-            return await self.__channel.fetch_message(message_id)
+            return await self.channel.fetch_message(message_id)
+        
         except (_discord.NotFound, _discord.Forbidden):
             return None
 
     def set_current_tool_message(self, message: _discord.Message | None) -> None:
-        self.__directory.properties_saver.write_properties(self.__channel, not self.has_unread_messages, message.id if message else None)
+        self.__directory.properties_saver.write_properties(self.discussion_descriptor.id, self.__target.is_private, not self.has_unread_messages, message.id if message else None)
 
     def _add_message(self, message: DiscordChatbotMessage) -> None:
         self.__messages.append(message)
@@ -204,7 +216,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
                     reply_to = None
 
                 discord_message, extras = _asyncio.run_coroutine_threadsafe(
-                    method.load_from_llm(self.__channel, specs, self.__creators, self.creators_state, data['data'], reply_to),
+                    method.load_from_llm(self.__target, specs, self.__creators, self.creators_state, data['data'], reply_to),
                     self.__loop
                 ).result()
 
@@ -240,29 +252,31 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         bot_user = self.__client.user
         assert bot_user is not None
 
-        if isinstance(self.__channel, _discord.DMChannel):
+        if self.__target.is_private:
             return private_context.read_content().format(
-                distant_username=self.__channel.recipient.name if self.__channel.recipient else "a single distant user",
+                distant_username=self.__target.descriptor.name,
                 local_username=bot_user.name,
                 local_full_name=bot_user.display_name,
             )
         else:
+            assert isinstance(self.__target.channel, _discord.TextChannel)
+            
             # guild.member_count est mis en cache par discord.py, pas besoin d'async
             return guild_context.read_content().format(
-                discussion_name=self.__channel.name,
-                guild_name=self.__channel.guild.name,
-                members_count=self.__channel.guild.member_count,
+                discussion_name=self.discussion_descriptor.name,
+                guild_name=self.__target.channel.guild.name,
+                members_count=self.__target.channel.guild.member_count,
                 local_username=bot_user.name,
                 local_full_name=bot_user.display_name,
             )
 
     async def mark_as_unread(self) -> None:
         tool_message = await self.get_current_tool_message()
-        self.__directory.properties_saver.write_properties(self.__channel, False, tool_message.id if tool_message else None)
+        self.__directory.properties_saver.write_properties(self.discussion_descriptor.id, self.__target.is_private, False, tool_message.id if tool_message else None)
 
     def mark_as_read(self) -> None:
         tool_message = _asyncio.run_coroutine_threadsafe(self.get_current_tool_message(), self.__loop).result()
-        self.__directory.properties_saver.write_properties(self.__channel, True, tool_message.id if tool_message else None)
+        self.__directory.properties_saver.write_properties(self.discussion_descriptor.id, self.__target.is_private, True, tool_message.id if tool_message else None)
 
     def on_tool_started(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
         _asyncio.run_coroutine_threadsafe(self.prepare_tool_message(tool, args), self.__loop).result()
@@ -274,7 +288,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         _asyncio.run_coroutine_threadsafe(self.remove_tool_message(tool, result), self.__loop).result()
 
     async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
-        message = await self.__channel.send(f"_Calling tool {_discord.utils.escape_markdown(tool.name)}..._")
+        message = await self.channel.send(f"_Calling tool {_discord.utils.escape_markdown(tool.name)}..._")
         self.set_current_tool_message(message)
 
     async def update_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:

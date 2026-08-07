@@ -18,5 +18,5 @@ class DiscordBotSaver():
 
         return discussions
 
-    def get_discussion_saver(self, channel: _discord.TextChannel | _discord.DMChannel) -> DiscordDiscussionSaver:
-        return DiscordDiscussionSaver(self.__directory.get_directory('dc-discussion-' + str(channel.id)))
+    def get_discussion_saver(self, target: _discord.TextChannel | _discord.User) -> DiscordDiscussionSaver:
+        return DiscordDiscussionSaver(self.__directory.get_directory('dc-discussion-' + str(target.id)))

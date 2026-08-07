@@ -89,11 +89,22 @@ class Chatbot(_abc.ABC):
     
     def _process_new_messages(self) -> None:
         for provider in self.__discussions_providers:
-            while provider.has_next_added_messages(self.specs):
-                message, discussion = provider.next_added_message(self.specs)
+            new_discussion_messages: list[tuple[ChatbotDiscussion, list[ChatbotMessage]]] = []
+            
+            while provider.has_next_added_messages(self.__specs):
+                message, discussion = provider.next_added_message(self.__specs)
                 
                 for processor in self.__messages_processors:
-                    processor.process_message(message, discussion, self.specs)
+                    processor.process_message(message, discussion, self.__specs)
+
+                if any(i[0] == discussion for i in new_discussion_messages):
+                    [i[1] for i in new_discussion_messages if i[0] == discussion][0].append(message)
+                else:
+                    new_discussion_messages.append((discussion, [message]))
+            
+            for discussion, new_messages in new_discussion_messages:
+                for processor in self.__messages_processors:
+                    processor.process_messages(new_messages, discussion, self.__specs)
     
     @_abc.abstractmethod
     def run(self) -> None:
