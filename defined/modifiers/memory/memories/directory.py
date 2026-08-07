@@ -29,7 +29,7 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
         def relevancy(self, state: _interactions.CreatorsState, preparation: evaluator_preparation_type, memory_name: str, remembering: ChatbotMemory.Remembering, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs) -> float:
             ...
     
-    def __init__(self, name: str, description: str, evaluator: Evaluator[preparation_type], directory: _saves.ResourcesDirectory) -> None:
+    def __init__(self, name: str, description: str, evaluator: Evaluator[preparation_type], directory: _saves.ResourcesDirectory, context: str | None = None) -> None:
         super().__init__(name, description)
         
         self.__directory = directory
@@ -39,6 +39,7 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
             'threshold': 0.5,
             'lost_after_days': 30
         })
+        self.__rememberings_directory = directory.get_directory('rememberings').get_directory(context) if context is not None else directory.get_directory('rememberings')
         
     @property
     def directory(self) -> _saves.ResourcesDirectory:
@@ -49,7 +50,7 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
         return self.__evaluator
     
     def save_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
-        resource = self.__directory.get_resource(str(remembering.uuid) + '.remembering')
+        resource = self.__rememberings_directory.get_resource(str(remembering.uuid) + '.json')
         resource.write_content(_json.dumps({
             'date': remembering.date.timestamp(),
             'context': remembering.context,
@@ -57,14 +58,14 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
         }))
         
     def forget_remembering(self, remembering: ChatbotMemory.Remembering) -> None:
-        self.__directory.get_resource(str(remembering.uuid) + '.remembering').delete()
+        self.__rememberings_directory.get_resource(str(remembering.uuid) + '.json').delete()
 
     def get_all_rememberings(self) -> _T.Sequence[ChatbotMemory.Remembering]:
         rememberings: list[ChatbotMemory.Remembering] = []
         
-        for filename in self.__directory.list_files():
-            if filename.endswith('.remembering') and not filename.startswith('.'):
-                resource = self.__directory.get_resource(filename)
+        for filename in self.__rememberings_directory.list_files():
+            if filename.endswith('.json') and not filename.startswith('.'):
+                resource = self.__rememberings_directory.get_resource(filename)
                 data: _chatbot_directory_based_memory_file_object = _json.loads(resource.read_content())
                 
                 rememberings.append(ChatbotMemory.Remembering(data['sentence'], data['context'], _datetime.datetime.fromtimestamp(data['date'])))
@@ -72,8 +73,8 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
         return rememberings
 
     def clear(self) -> None:
-        for filename in self.__directory.list_files():
-            self.__directory.get_resource(filename).delete()
+        for filename in self.__rememberings_directory.list_files():
+            self.__rememberings_directory.get_resource(filename).delete()
 
     def delete_useless_elements(self) -> None:
         days_count = self.__configuration.read_configuration()['lost_after_days']

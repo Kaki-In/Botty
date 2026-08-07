@@ -17,5 +17,5 @@ class UserChatbotMemoryFactory[preparation_type](ChatbotMemoryFactory):
         return self.__evaluator
     
     def get_memory(self, name: str, description: str, discussion: _ai_discussion.ChatbotDiscussion, specs: _ai_chatbot_data.ChatbotSpecs, state: _interactions.CreatorsState) -> ChatbotMemory[preparation_type]:
-        return ChatbotDirectoryMemory(name, description, self.__evaluator, specs.configuration_directory.get_directory(f'memory:{discussion.uuid}:{name}'))
+        return ChatbotDirectoryMemory(name, description, self.__evaluator, specs.configuration_directory.get_directory(f'memory:{name}'), discussion.uuid)
 
