@@ -27,11 +27,6 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
         self.__directory = directory
         self.__creator_factory = creator_factory
         self.__state = _interactions.CreatorsState()
-        self.__configuration = _saves.ConfigurationFile[_remembering_configuration_object](self.__directory.get_resource('config.json'), {
-            'load_messages_back': 10,
-            'min_confidence': 0.5,
-            'min_relevance': 0.5
-        })
         
     @property
     def modifier(self) -> ChatbotMemoriesDiscussionModifier:
@@ -57,6 +52,8 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
             all_rememberings = preparator.get_rememberings_for(self.__state, from_discussion, specs)
             
             for memory_name, (memory, rememberings) in all_rememberings.items():
+                memory_settings_directory = self.__directory.get_directory('memory:' + memory_name)
+            
                 state = _interactions.CreatorsState()
                 
                 rememberings_json_schema = {
@@ -84,7 +81,7 @@ class ChatbotMemoryProcessor(_ai_chatbots.ChatbotMessageProcessor):
                     }
                 }
                 
-                prompt_file = self.__directory.get_resource(memory_name + '.txt')
+                prompt_file = memory_settings_directory.get_resource('memory-creation-prompt.txt')
                 
                 if not prompt_file.exists:
                     prompt_file.write_content("""You are a memory extraction system for {bot_name}.
@@ -109,7 +106,13 @@ Do NOT extract:
 The conversation may cover completely mundane or unrelated topics. That is expected and fine — if nothing in it is worth remembering, return an empty array. An empty array is a correct and common answer. Do not force an extraction just to produce output.
 """.format(bot_name = specs.name, name = memory_name, description = memory.description))
                     
-                configuration = self.__configuration.read_configuration()
+                configuration_file =  _saves.ConfigurationFile[_remembering_configuration_object](memory_settings_directory.get_resource('config.json'), {
+                    'load_messages_back': 10,
+                    'min_confidence': 0.5,
+                    'min_relevance': 0.5
+                })
+                
+                configuration = configuration_file.read_configuration()
                 
                 discussion_messages = "Here are the discussion messages : \n\n"
                 
@@ -149,7 +152,7 @@ If there is nothing new and worth keeping, return an empty array: []
                         )
                     )
                     
-                results: list[_remembering_response_object] = _json.loads(state.create_from_factory(self.__creator_factory, description, self.__directory.get_directory('remembering_resolver')).result)
+                results: list[_remembering_response_object] = _json.loads(state.create_from_factory(self.__creator_factory, description, memory_settings_directory.get_directory('remembering_resolver')).result)
                 
                 for remembering_description in results:
                     if remembering_description['context'].get('confidence', 1) < configuration['min_confidence']:
