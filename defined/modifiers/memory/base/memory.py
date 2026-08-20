@@ -44,7 +44,6 @@ class ChatbotMemory[preparation_type](_abc.ABC):
         
         # Ensure deleting too old elements
         self.save_remembering = self._checks_for_memory(self.save_remembering)
-        self.forget_remembering = self._checks_for_memory(self.forget_remembering)
         self.get_linked_rememberings = self._checks_for_memory(self.get_linked_rememberings)
         
     @property

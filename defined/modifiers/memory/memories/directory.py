@@ -9,6 +9,7 @@ import saves as _saves
 import datetime as _datetime
 import json as _json
 import interactions as _interactions
+import uuid as _uuid
 
 import ai.discussion as _ai_discussion
 import ai.chatbot_data as _ai_chatbot_data
@@ -68,7 +69,7 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
                 resource = self.__rememberings_directory.get_resource(filename)
                 data: _chatbot_directory_based_memory_file_object = _json.loads(resource.read_content())
                 
-                rememberings.append(ChatbotMemory.Remembering(data['sentence'], data['context'], _datetime.datetime.fromtimestamp(data['date'])))
+                rememberings.append(ChatbotMemory.Remembering(data['sentence'], data['context'], _datetime.datetime.fromtimestamp(data['date']), _uuid.UUID(filename.split('.')[0])))
         
         return rememberings
 
@@ -95,8 +96,11 @@ class ChatbotDirectoryMemory[preparation_type](ChatbotMemory[preparation_type]):
             rememberings.append((self.__evaluator.relevancy(state, preparation, self.name, remembering, discussion, specs), remembering))
         
         rememberings.sort(key = lambda r: r[0])
+        
+        if configuration['top_k'] >= 0:
+            rememberings = rememberings[:configuration['top_k']]
             
-        return [r[1] for r in rememberings if r[0] > configuration['threshold']][:configuration['top_k']]
+        return [r[1] for r in rememberings if r[0] > configuration['threshold']]
 
 
 

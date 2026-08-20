@@ -1,6 +1,7 @@
 import abc as _abc
 import typing as _T
 import threading as _threading
+import traceback as _traceback
 
 import interactions as _interactions
 
@@ -79,9 +80,24 @@ class Chatbot(_abc.ABC):
             
         raise ReferenceError("discussion not found")
     
+    def __modify_chat_completion(self, modifier: ChatbotDiscussionModifier, discussion: ChatbotDiscussion, description: _interactions.ChatCompletionDescription) -> _interactions.ChatCompletionDescription:
+        try:
+            return modifier.modify_chat_completion(self.__specs, discussion, description)
+        
+        except _interactions.InteractionInterruptionError:
+            raise
+        
+        except Exception:
+            print("Error occured in chat discussion modifier", modifier, "for", self.__specs.name)
+            _traceback.print_exc()
+            
+            print("skipping this modifier")
+            
+            return description
+    
     def complete(self, description: _interactions.ChatCompletionDescription, discussion: ChatbotDiscussion) -> str:
         for modifier in reversed(self.__modifiers):
-            description = description.adding_editor_before(lambda description, m=modifier: m.modify_chat_completion(self.__specs, discussion, description))
+            description = description.adding_editor_before(lambda description, m=modifier: self.__modify_chat_completion(m, discussion, description))
 
         result = discussion.creators_state.create_from_factory(self.__specs.messages_creator, description, self.__specs.configuration_directory.get_directory("main_chat_completion"))
         
@@ -95,7 +111,11 @@ class Chatbot(_abc.ABC):
                 message, discussion = provider.next_added_message(self.__specs)
                 
                 for processor in self.__messages_processors:
-                    processor.process_message(message, discussion, self.__specs)
+                    try:
+                        processor.process_message(message, discussion, self.__specs)
+                    except:
+                        print("Error while handling message processor", processor, "of bot", self.__specs.name, "for message", message)
+                        _traceback.print_exc()
 
                 if any(i[0] == discussion for i in new_discussion_messages):
                     [i[1] for i in new_discussion_messages if i[0] == discussion][0].append(message)
@@ -104,7 +124,11 @@ class Chatbot(_abc.ABC):
             
             for discussion, new_messages in new_discussion_messages:
                 for processor in self.__messages_processors:
-                    processor.process_messages(new_messages, discussion, self.__specs)
+                    try:
+                        processor.process_messages(new_messages, discussion, self.__specs)
+                    except:
+                        print("Error while handling message processor", processor, "of bot", self.__specs.name, "for messages", new_messages)
+                        _traceback.print_exc()
     
     @_abc.abstractmethod
     def run(self) -> None:

@@ -93,9 +93,10 @@ class DiscordBotHandler():
 
     def __run(self) -> None:
         _asyncio.set_event_loop(self.__loop)
-        self.__loop.run_until_complete(self.__client.start(self.__token))
-        self.__loop.run_forever()
+        self.__loop.create_task(self.__client.start(self.__token))
 
+        self.__loop.run_forever()
+        
     def stop(self, join: bool = False):
         _asyncio.ensure_future(self.__client.close(), loop=self.__loop)
         self.__loop.call_soon_threadsafe(self.__loop.stop)
