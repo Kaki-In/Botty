@@ -287,9 +287,25 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
     def on_tool_finished(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
         _asyncio.run_coroutine_threadsafe(self.remove_tool_message(tool, result), self.__loop).result()
 
-    async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any]) -> None:
-        message = await self.channel.send(f"_Calling tool {_discord.utils.escape_markdown(tool.name)}..._")
+    def _build_tool_embed(self, tool: _interactions.ChatCompletionTool, content: str, *, color: _discord.Color) -> _discord.Embed:
+        embed = _discord.Embed(
+            title=f"Calling tool {tool.name}",
+            description=content,
+            color=color,
+        )
+        return embed
+
+
+    async def prepare_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any],) -> None:
+        embed = self._build_tool_embed(
+            tool,
+            "Action en cours…",
+            color=_discord.Color.blue(),
+        )
+
+        message = await self.channel.send(embed=embed)
         self.set_current_tool_message(message)
+
 
     async def update_tool_message(self, tool: _interactions.ChatCompletionTool, args: _T.Mapping[str, _T.Any], event_data: str) -> None:
         if await self.get_current_tool_message() is None:
@@ -298,7 +314,13 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         current_message = await self.get_current_tool_message()
         assert current_message is not None
 
-        await current_message.edit(content=f"_Calling tool {_discord.utils.escape_markdown(tool.name)}...\n{_discord.utils.escape_markdown(event_data)}_")
+        embed = self._build_tool_embed(
+            tool,
+            f"Action en cours…\n\n{event_data}",
+            color=_discord.Color.blue(),
+        )
+
+        await current_message.edit(embed=embed)
 
     async def remove_tool_message(self, tool: _interactions.ChatCompletionTool, result: _interactions.ChatCompletionTool.ChatCompletionToolResult) -> None:
         self.__directory.save_tool_call(result)
@@ -309,4 +331,10 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         current_message = await self.get_current_tool_message()
         assert current_message is not None
 
-        await current_message.edit(content=f"_{_discord.utils.escape_markdown(tool.name)} action ended:\n{_discord.utils.escape_markdown(result.result)}_")
+        embed = self._build_tool_embed(
+            tool,
+            f"Action terminée.\n\n{result.result}",
+            color=_discord.Color.green(),
+        )
+
+        await current_message.edit(embed=embed)
