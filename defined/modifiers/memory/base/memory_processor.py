@@ -186,7 +186,7 @@ If you can't resolve a reference with confidence, don't record that fact.
                         'type': 'array',
                         'items': {
                             'type': 'object',
-                            'required': ['fact', 'context', 'confidence', 'relevance'],
+                            'required': ['fact', 'context', 'confidence', 'relevance', 'already_provided'],
                             'properties': {
                                 'fact': {
                                     'type': 'string',
