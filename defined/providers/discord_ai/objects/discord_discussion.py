@@ -135,10 +135,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
         try:
             message_method = self.get_message_method_from_discord(message)
         except TypeError:
-            try:
-                await message.delete()
-            except Exception:
-                print("Could not handle message", message)
+            print("Could not handle message", message)
             return
 
         config = _saves.ConfigurationFile[_discord_discussion_configuration_object](

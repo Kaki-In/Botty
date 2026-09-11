@@ -16,6 +16,7 @@ class _remembering_response_object(_T.TypedDict):
     confidence: float
     relevance: float
     context: dict[str, _T.Any]
+    already_provided: bool
 
 class _remembering_global_configuration_object(_T.TypedDict):
     load_messages_back: int
@@ -141,7 +142,7 @@ an array of facts belonging to that memory (an empty array if none).
 
 Each fact in an array has:
 - `fact`: a single fact, written in your own words as a new, standalone statement
-- `context`: an object with:
+- `context`: an object containing all the context necessary around the remembering where you can add anything, including AT LEAST:
     - `topic`: short label for what this is about (string)
     - `source`: where or who brought you to this fact
 - `confidence`: how sure you are this is accurate and worth keeping, from 0.00 to 1.00.
@@ -152,6 +153,7 @@ Each fact in an array has:
     - 0.90–1.00: a core fact you'd want to know before any future interaction (strong preference, key relationship, recurring need)
     - 0.50–0.80: a minor but genuine fact worth keeping
     - below 0.50: marginal — you're recording it mostly because it was mentioned, not because it matters.
+- `already_provided`: `true` when the memory has already been provided earlier
 
 `fact` must be a rewritten statement, never a sentence copied from the conversation.
 Even if the original message already sounds clear and grammatically complete, you
@@ -182,7 +184,6 @@ If you can't resolve a reference with confidence, don't record that fact.
                 'properties': {
                     memory_name: {
                         'type': 'array',
-                        'maxItems': 5,
                         'items': {
                             'type': 'object',
                             'required': ['fact', 'context', 'confidence', 'relevance'],
@@ -201,6 +202,9 @@ If you can't resolve a reference with confidence, don't record that fact.
                                 },
                                 'confidence': {'type': 'number', 'minimum': 0, 'maximum': 1},
                                 'relevance': {'type': 'number', 'minimum': 0, 'maximum': 1},
+                                'already_provided': {
+                                    'type': 'boolean'
+                                }
                             }
                         }
                     }
@@ -244,7 +248,7 @@ If you can't resolve a reference with confidence, don't record that fact.
 
                 for remembering_description in facts:
                     if (remembering_description['confidence'] < configuration['min_confidence']
-                            or remembering_description['relevance'] < configuration['min_relevance']):
+                            or remembering_description['relevance'] < configuration['min_relevance']) or remembering_description['already_provided']:
                         termcolor.cprint(memory_name + " " + str(remembering_description), color=(255, 0, 0))
                         continue
 

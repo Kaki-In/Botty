@@ -126,10 +126,7 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         try:
             message_method = self.get_message_method_from_telegram(update.effective_message)
         except TypeError:
-            try:
-                await update.effective_message.delete()
-            except:
-                print("Could not handle message", update.effective_message)
+            print("Could not handle message", update.effective_message)
             return False
         
         config = _saves.ConfigurationFile[_telegram_discussion_configuration_object](specs.directory.get_directory('telegram').get_directory('conf').get_resource('discussions.json'), {
