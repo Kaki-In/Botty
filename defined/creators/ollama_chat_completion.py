@@ -16,6 +16,7 @@ class _ollama_file_configuration_object(_T.TypedDict):
     model_name: str
     options: dict[str, _T.Any]
     supports_multimodal: bool
+    thinking: bool
 
 class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
     def build_from(self, directory: _saves.ResourcesDirectory) -> 'OllamaChatCompletor':
@@ -28,22 +29,24 @@ class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.Chat
                 'top_k': 256,
                 'temperature': 0.5
             },
-            'supports_multimodal': False
+            'supports_multimodal': False,
+            'thinking': False
         })
         config = conf_file.read_configuration()
 
         client = _ollama.Client(config['hostname'])
 
-        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), config.get('supports_multimodal') or False)
+        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), config.get('supports_multimodal') or False, config.get('thinking') or False)
 
 class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
-    def __init__(self, client: _ollama.Client, model_name: str, base_options: _ollama.Options, supports_multimodal: bool) -> None:
+    def __init__(self, client: _ollama.Client, model_name: str, base_options: _ollama.Options, supports_multimodal: bool, thinking: bool) -> None:
         super().__init__()
 
         self.__client = client
         self.__model_name = model_name
         self.__base_options = base_options
         self.__supports_multimodal = supports_multimodal
+        self.__thinking = thinking
 
     def get_messages_tools_json(self, description: _interactions.ChatCompletionDescription, runtime_tools_results: _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]) -> tuple[_T.Sequence[_ollama.Message], None | _T.Sequence[_ollama.Tool], _T.Any]:
         usable_tools = [tool for tool in description.tools if not (tool.is_ephemeral and tool.name in [result.tool_name for result in runtime_tools_results])]
@@ -162,7 +165,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 messages=messages,
                 options=self.__base_options,
                 format=schema,
-                think=False,
+                think=self.__thinking,
                 keep_alive=0,
                 tools=tools
             )
@@ -170,6 +173,9 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             self.raise_interruption_if_needed()
             
             message = response.message
+            
+            if self.__thinking:
+                print(message.thinking)
             
             if message.content:
                 try:
