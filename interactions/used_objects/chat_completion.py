@@ -1,6 +1,8 @@
 import typing as _T
 import local_utils.images as _local_utils_images
 import datetime as _datetime
+import saves as _saves
+import json as _json
 
 class ChatCompletionMessage():
     def __init__(self, role: str, content: str, images: _T.Optional[_T.Sequence[_local_utils_images.Image]] = None):
@@ -263,3 +265,26 @@ class ChatCompletionResult():
     def tools_results(self) -> _T.Sequence[ChatCompletionTool.ChatCompletionToolResult]:
         return self.__tools_results
 
+class ToolCallSaveFile():
+    def __init__(self, file: _saves.ResourceFile) -> None:
+        self.__file = file
+        
+    def write_tool_call(self, call: ChatCompletionTool.ChatCompletionToolResult) -> None:
+        self.__file.write_content(_json.dumps({
+            'tool_name': call.tool_name,
+            'args': call.args,
+            'result': call.result,
+            'time': call.time.timestamp(),
+            'users_result': call.users_result
+        }, indent=2))
+        
+    def read_tool_call(self) -> ChatCompletionTool.ChatCompletionToolResult:
+        data = _json.loads(self.__file.read_content())
+        
+        return ChatCompletionTool.ChatCompletionToolResult(
+            _datetime.datetime.fromtimestamp(data['time'], _datetime.UTC), 
+            data['tool_name'],
+            data['args'],
+            data['result'],
+            data['users_result']
+        )
