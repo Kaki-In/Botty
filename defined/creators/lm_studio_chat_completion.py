@@ -247,7 +247,8 @@ class LMStudioChatCompletor(_interactions.Creator[_interactions.ChatCompletionDe
         if tool.is_ephemeral and tool.name in [result.tool_name for result in description.last_tools_calls]:
             return _interactions.ChatCompletionTool.ChatCompletionToolResult(
                 _datetime.datetime.now(_datetime.UTC), tool.name, args,
-                "You cannot call this tool twice. Please now answer to the user. "
+                "You cannot call this tool twice. Please now answer to the user. ",
+                f'Accidentally called the tool {tool.name!r} twice'
             )
 
         advancement_follower = description.tools_advancement_follower
@@ -265,7 +266,7 @@ class LMStudioChatCompletor(_interactions.Creator[_interactions.ChatCompletionDe
             result = 'An error occured: ' + type(exc).__name__ + ": " + str(exc)
 
         tool_result = _interactions.ChatCompletionTool.ChatCompletionToolResult(
-            _datetime.datetime.now(_datetime.UTC), tool.name, args, result
+            _datetime.datetime.now(_datetime.UTC), tool.name, args, result[0], result[1]
         )
 
         if advancement_follower is not None:
@@ -323,7 +324,7 @@ class LMStudioChatCompletor(_interactions.Creator[_interactions.ChatCompletionDe
                 if tool is None:
                     tool_result = _interactions.ChatCompletionTool.ChatCompletionToolResult(
                         _datetime.datetime.now(_datetime.UTC), tool_call['tool_name'], tool_call['arguments'],
-                        f"Unknown tool {tool_call['tool_name']!r}."
+                        f"Unknown tool {tool_call['tool_name']!r}.", f'Accidentally called unknown tool {tool_call['tool_name']}'
                     )
                 else:
                     tool_result = self.__execute_tool_call(tool, tool_call['arguments'], description)

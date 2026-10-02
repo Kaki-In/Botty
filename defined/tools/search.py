@@ -54,13 +54,13 @@ class SearchTool(_interactions.ChatCompletionTool):
         
         self.__searchers = searchers
     
-    def operate_search(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str: 
+    def operate_search(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> tuple[str, str]: 
         engine = kwargs['engine']
         results = self.__searchers[engine](kwargs["search"])
         
         return _json.dumps([
             result.to_json()
             for result in results
-        ])
+        ]), f"{len(results)} résultats obtenus"
 
 

@@ -330,7 +330,7 @@ class DiscordChatbotDiscussion(_ai_discussion.ChatbotDiscussion[DiscordChatbotMe
 
         embed = self._build_tool_embed(
             tool,
-            f"Action terminée.\n\n{result.result}",
+            f"Action terminée.\n\n{result.users_result}",
             color=_discord.Color.green(),
         )
 

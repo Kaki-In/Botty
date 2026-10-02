@@ -283,7 +283,9 @@ class TelegramChatbotDiscussion(_ai_discussion.ChatbotDiscussion[TelegramChatbot
         current_message = self.current_tool_message
         assert current_message is not None
         
-        await current_message.edit_text(f"<i>{_html.escape(tool.name)} action ended : \n{_html.escape(result.result)}</i>", parse_mode=_telegram_constants.ParseMode.HTML)
+        result_escape = _html.escape(result.users_result)
+        
+        await current_message.edit_text(f"<i>{_html.escape(tool.name)} action ended : \n{result_escape[:4000]}</i>", parse_mode=_telegram_constants.ParseMode.HTML)
         
 
 

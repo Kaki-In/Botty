@@ -24,9 +24,9 @@ class ChatbotMemoryTool(_interactions.ChatCompletionTool, _abc.ABC):
     def memory(self) -> ChatbotMemory:
         return self.__memory
 
-    def remember(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str:
+    def remember(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> tuple[str, str]:
         memory = self.__memory
         memory.save_remembering(memory.Remembering(kwargs['sentence_data'], kwargs['context'], _datetime.datetime.now()))
         
-        return "element remembered into memory"
+        return "element remembered into memory", "Remembered: " + kwargs["sentence_data"]
 

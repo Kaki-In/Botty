@@ -174,9 +174,6 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
             
             message = response.message
             
-            if self.__thinking:
-                print(message.thinking)
-            
             if message.content:
                 try:
                     tool_call = _json.loads(message.content)
@@ -206,7 +203,8 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                         _datetime.datetime.now(_datetime.UTC), 
                         tool.name, 
                         tool_call.function.arguments, 
-                        "You cannot call this tool twice. Please now answer to the user. "
+                        "You cannot call this tool twice. Please now answer to the user. ",
+                        f'Accidentally called the tool {tool.name!r} twice'
                     )
                 else:
                     try:
@@ -226,7 +224,8 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                         _datetime.datetime.now(_datetime.UTC), 
                         tool.name, 
                         tool_call.function.arguments, 
-                        result
+                        result[0],
+                        result[1]
                     )
                     
                     if description.tools_advancement_follower:

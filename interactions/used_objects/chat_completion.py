@@ -1,8 +1,6 @@
 import typing as _T
 import local_utils.images as _local_utils_images
-import saves as _saves
 import datetime as _datetime
-import json as _json
 
 class ChatCompletionMessage():
     def __init__(self, role: str, content: str, images: _T.Optional[_T.Sequence[_local_utils_images.Image]] = None):
@@ -24,14 +22,15 @@ class ChatCompletionMessage():
 
 class ChatCompletionTool():
     class ToolCallable(_T.Protocol):
-        def __call__(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> str: ...
+        def __call__(self, update_state: _T.Callable[[str], _T.Any], **kwargs) -> tuple[str, str]: ...
         
     class ChatCompletionToolResult():
-        def __init__(self, time: _datetime.datetime, tool_name: str, args: _T.Mapping[str, _T.Any], result: str) -> None:
+        def __init__(self, time: _datetime.datetime, tool_name: str, args: _T.Mapping[str, _T.Any], result: str, users_result: str) -> None:
             self.__time = time
             self.__tool = tool_name
             self.__args = args
             self.__result = result
+            self.__users_result = users_result
             
         @property
         def time(self) -> _datetime.datetime:
@@ -48,6 +47,10 @@ class ChatCompletionTool():
         @property
         def result(self) -> str:
             return self.__result
+        
+        @property
+        def users_result(self) -> str:
+            return self.__users_result
 
     class Parameter():
         def __init__(self, schema: _T.Any, required: bool = True) -> None:
@@ -259,27 +262,4 @@ class ChatCompletionResult():
     @property
     def tools_results(self) -> _T.Sequence[ChatCompletionTool.ChatCompletionToolResult]:
         return self.__tools_results
-
-class ToolCallSaveFile():
-    def __init__(self, file: _saves.ResourceFile) -> None:
-        self.__file = file
-        
-    def write_tool_call(self, call: ChatCompletionTool.ChatCompletionToolResult) -> None:
-        self.__file.write_content(_json.dumps({
-            'tool_name': call.tool_name,
-            'args': call.args,
-            'result': call.result,
-            'time': call.time.timestamp()
-        }, indent=2))
-        
-    def read_tool_call(self) -> ChatCompletionTool.ChatCompletionToolResult:
-        data = _json.loads(self.__file.read_content())
-        
-        return ChatCompletionTool.ChatCompletionToolResult(
-            _datetime.datetime.fromtimestamp(data['time'], _datetime.UTC), 
-            data['tool_name'],
-            data['args'],
-            data['result']
-        )
-
 
