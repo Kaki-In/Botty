@@ -55,7 +55,7 @@ class DiscordBotHandler():
 
             discussion = self.get_discussion_or_create(target)
             self.delete_discussion(discussion)
-            await interaction.response.send_message("Discussion oubliée.", ephemeral=True)
+            await interaction.response.send_message("Discussion oubliée.")
                 
         self.__thread = _threading.Thread(target=self.__run)
 
