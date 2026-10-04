@@ -55,8 +55,13 @@ class DiscordBotHandler():
 
             discussion = self.get_discussion_or_create(target)
             self.delete_discussion(discussion)
-            await interaction.response.send_message("Discussion oubliée.")
-                
+            
+            await interaction.response.send_message(embed = _discord.Embed(
+                title=f"Discussion oubliée",
+                description="Les messages ont été supprimés du répertoire du bot",
+                color=_discord.Color.green(),
+            ))
+        
         self.__thread = _threading.Thread(target=self.__run)
 
         self.__client.event(self.on_ready)
