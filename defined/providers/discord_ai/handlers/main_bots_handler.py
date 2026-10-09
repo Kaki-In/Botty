@@ -1,4 +1,5 @@
 from .bot_handler import DiscordBotHandler
+from .stop_operation import DiscordStopOperation
 from ..objects import DiscordChatbotMessage, DiscordChatbotDiscussion
 
 import interactions as _interactions
@@ -9,13 +10,12 @@ import typing as _T
 
 class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChatbotDiscussion, DiscordChatbotMessage]):
     def __init__(self, *message_methods: _T.Type[DiscordChatbotMessage]) -> None:
-        super().__init__()
+        self.__bots: list[DiscordBotHandler] = []
+        super().__init__(DiscordStopOperation(self.__bots))
         
         self.__message_methods = list(message_methods)
         self.__creator_facts: list[tuple[_interactions.CreatorFactory, _T.Type, _T.Type]] = []
-
-        self.__bots: list[DiscordBotHandler] = []
-
+        
     def add_message_method(self, method: _T.Type[DiscordChatbotMessage]) -> None:
         self.__message_methods.append(method)
 

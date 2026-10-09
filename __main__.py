@@ -63,7 +63,7 @@ You must only answer by the query without any comment.
     for bot in bots_registry.chatbots:
         memory_factory = GlobalChatbotMemoryFactory(ChatbotVectorMemoryEvaluator(bot.specs.directory.get_directory('embedding-cache'), ollama_embedder_factory))
         preparator = ChatbotMemoryQueryBasedPreparator(query_factory, knowledge=(memory_factory, "Use this memory for any general knowledge"))
-        modifier = ChatbotMemoriesDiscussionModifier([preparator], False)
+        modifier = ChatbotMemoriesDiscussionModifier('base', [preparator], False)
         
         bot.add_discussion_modifier(modifier) # For the bot to remember back some elements. Tools allow the bot to explictly ask to save a remembering, but it is useless in this context. 
         bot.add_message_processor(ChatbotMemoryProcessor(modifier, bot.specs.configuration_directory.get_directory('memory_processor'), ollama_creator_factory)) # For the bot to automatically create its own rememberings

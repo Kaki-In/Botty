@@ -4,14 +4,21 @@ import queue as _queue
 
 from ..discussion.discussion import ChatbotDiscussion
 from .message_processor import ChatbotMessage
+from .operation import ChatbotOperation
 
 from ..chatbot_data import ChatbotSpecs
 
 class ChatbotDiscussionsProvider[discussion: ChatbotDiscussion, message: ChatbotMessage](_abc.ABC):
-    def __init__(self) -> None:
+    def __init__(self, *operations: ChatbotOperation) -> None:
         super().__init__()
         
+        self.__operations = operations
+        
         self.__new_messages_queues: dict[str, _queue.Queue[tuple[message, discussion]]] = {}
+        
+    @property
+    def operations(self) -> _T.Sequence[ChatbotOperation]:
+        return self.__operations
         
     def _get_new_messages_queues(self, specs: ChatbotSpecs) -> _queue.Queue[tuple[message, discussion]]:
         if not specs.name in self.__new_messages_queues:

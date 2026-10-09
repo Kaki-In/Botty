@@ -2,6 +2,7 @@ import abc as _abc
 import typing as _T
 import threading as _threading
 import traceback as _traceback
+import functools as _functools
 
 import interactions as _interactions
 
@@ -11,6 +12,7 @@ from ..chatbot_data import ChatbotSpecs
 from .discussion_provider import ChatbotDiscussionsProvider
 from .discussion_modifier import ChatbotDiscussionModifier
 from .message_processor import ChatbotMessageProcessor
+from .operation import ChatbotOperation
 
 class Chatbot(_abc.ABC):
     _subclasses = {}
@@ -24,9 +26,21 @@ class Chatbot(_abc.ABC):
         self.__discussions_providers: list[ChatbotDiscussionsProvider] = []
         self.__modifiers = list(modifiers or [])
         self.__messages_processors = list(processors or [])
+        
+        self.__specs._set_operations(self.operations)
 
         self.__should_stop = False
-
+    
+    @staticmethod
+    def _modifies_operation[_self: Chatbot, **_func_params, _ret](f: _T.Callable[_T.Concatenate[_self, _func_params], _ret]) -> _T.Callable[_T.Concatenate[_self, _func_params], _ret]:
+        @_functools.wraps(f)
+        def new_func(self: _self, *args: _func_params.args, **kwargs: _func_params.kwargs) -> _ret:
+            result = f(self, *args, **kwargs)
+            self.__specs._set_operations(self.operations)
+            return result
+        
+        return new_func
+    
     @property
     def name(self) -> str:
         return self.__specs.name
@@ -60,18 +74,37 @@ class Chatbot(_abc.ABC):
     def modifiers(self) -> _T.Sequence[ChatbotDiscussionModifier]:
         return self.__modifiers
     
+    @property
+    def operations(self) -> _T.Sequence[ChatbotOperation]:
+        operations: list[ChatbotOperation] = []
+        
+        for discussion_provider in self.__discussions_providers:
+            operations.extend(discussion_provider.operations)
+        
+        for modifier in self.__modifiers:
+            operations.extend(modifier.operations)
+        
+        for message_processor in self.__messages_processors:
+            operations.extend(message_processor.operations)
+        
+        return operations
+    
+    @_modifies_operation
     def add_discussion_modifier(self, modifier: ChatbotDiscussionModifier) -> None:
         self.__modifiers.append(modifier)
 
+    @_modifies_operation
     def remove_discussion_modifier(self, modifier: ChatbotDiscussionModifier) -> None:
         self.__modifiers.remove(modifier)
     
+    @_modifies_operation
     def add_discussion_provider(self, provider: ChatbotDiscussionsProvider) -> None:
         self.__discussions_providers.append(provider)
         
+    @_modifies_operation
     def add_message_processor(self, processor: ChatbotMessageProcessor) -> None:
         self.__messages_processors.append(processor)
-    
+        
     def get_discussion_by_id[discussionType: ChatbotDiscussion](self, uuid: str, discussionType: _T.Type[discussionType]) -> discussionType:
         for discussion in self.discussions:
             if discussion.uuid == uuid:

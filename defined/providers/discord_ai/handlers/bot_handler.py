@@ -1,15 +1,29 @@
 import discord as _discord
+import discord.ext.tasks as _discord_ext_tasks
 import typing as _T
 import asyncio as _asyncio
 import traceback as _traceback
 import threading as _threading
+import datetime as _datetime
+import inspect as _inspect
+import traceback as _traceback
 
 from ..objects import DiscordChatbotDiscussion, DiscordChatbotMessage, DiscordDiscussionTarget
 from ..saves import DiscordBotSaver, DiscordDiscussionSaver
 
 import interactions as _interactions
 import queue as _queue
-import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data
+import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data, ai.chatbots as _ai_chatbots
+
+
+PY_TYPES = {
+    _ai_chatbots.ChatbotOperation.Argument.Type.INT: int, _ai_chatbots.ChatbotOperation.Argument.Type.FLOAT: float, _ai_chatbots.ChatbotOperation.Argument.Type.BOOL: bool,
+    _ai_chatbots.ChatbotOperation.Argument.Type.STRING: str, _ai_chatbots.ChatbotOperation.Argument.Type.DATE: str, _ai_chatbots.ChatbotOperation.Argument.Type.DURATION: str,
+}
+CONVERTERS = {
+    _ai_chatbots.ChatbotOperation.Argument.Type.DATE: _datetime.date.fromisoformat,
+    _ai_chatbots.ChatbotOperation.Argument.Type.DURATION: lambda s: _datetime.timedelta(seconds=float(s))
+}
 
 
 class DiscordBotHandler():
@@ -39,8 +53,28 @@ class DiscordBotHandler():
 
         self.__tree = _discord.app_commands.CommandTree(self.__client)
         
-        @self.__tree.command(name="forget", description="Efface la discussion")
-        async def cmd_forget(interaction: _discord.Interaction):
+        self.__thread = _threading.Thread(target=self.__run)
+
+        self.__client.event(self.on_ready)
+        self.__client.event(self.on_message)
+        self.__client.event(self.on_message_edit)
+        
+        self.__last_tree_state: _T.Any = None
+
+        if directly_start:
+            self.start()
+    
+    def build_command(self, operation: _ai_chatbots.ChatbotOperation) -> _discord.app_commands.Command:
+        args = sorted(operation.arguments.values(), key=lambda a: not a.is_mandatory)  # obligatoires d'abord
+
+        async def callback(interaction: _discord.Interaction, **kwargs):
+            values = {
+                name: CONVERTERS[operation.get_argument_by_name(name).type](v)
+                    if operation.get_argument_by_name(name).type in CONVERTERS else v
+                for name, v in kwargs.items() if v is not None
+            }
+            await interaction.response.defer()
+
             channel = interaction.channel
             
             if not isinstance(channel, (_discord.TextChannel, _discord.DMChannel)):
@@ -54,22 +88,60 @@ class DiscordBotHandler():
                 target = DiscordDiscussionTarget(channel)
 
             discussion = self.get_discussion_or_create(target)
-            self.delete_discussion(discussion)
             
-            await interaction.response.send_message(embed = _discord.Embed(
-                title=f"Discussion oubliée",
-                description="Les messages ont été supprimés du répertoire du bot",
-                color=_discord.Color.green(),
+            result = await _asyncio.to_thread(operation._proceed, self.__chatbot_specs, discussion, **values)
+            
+            try:
+                await interaction.response.send_message(embed = _discord.Embed(
+                    title=f"Opération effectuée",
+                    description=result[:2000],
+                    color=_discord.Color.green()
+                ))
+            
+            except Exception as exc:
+                await interaction.response.send_message(embed = _discord.Embed(
+                    title=f"Une erreur s'est produite",
+                    description=str(exc),
+                    color=_discord.Color.green(),
+                ))
+            
+
+        params = [_inspect.Parameter("interaction", _inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                                    annotation=_discord.Interaction)]
+        for a in args:
+            t = PY_TYPES[a.type]
+            params.append(_inspect.Parameter(
+                a.name, _inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                annotation=t if a.is_mandatory else _T.Optional[t],
+                default=_inspect.Parameter.empty if a.is_mandatory else None,
             ))
         
-        self.__thread = _threading.Thread(target=self.__run)
+        callback.__signature__ = _inspect.Signature(params)
 
-        self.__client.event(self.on_ready)
-        self.__client.event(self.on_message)
-        self.__client.event(self.on_message_edit)
+        return _discord.app_commands.Command(name=operation.name, description=operation.description, callback=callback)
 
-        if directly_start:
-            self.start()
+    def __operations_state(self) -> tuple:
+        return tuple(
+            (op.name, tuple((a.name, a.type, a.is_mandatory) for a in op.arguments.values()))
+            for op in self.chatbot_specs.operations
+        )
+
+    async def refresh_commands(self) -> None:
+        state = self.__operations_state()
+        
+        if state == self.__last_tree_state:
+            return
+
+        self.__tree.clear_commands(guild=None)
+        for operation in self.chatbot_specs.operations:
+            self.__tree.add_command(self.build_command(operation))
+            
+        await self.__tree.sync()
+        self.__last_tree_state = state
+
+    @_discord_ext_tasks.loop(minutes=5)
+    async def __watch(self) -> None:
+        await self.refresh_commands()
 
     def get_state_for_discussion(self, discussion_id: int) -> _interactions.CreatorsState:
         if not discussion_id in self.__states:
@@ -132,9 +204,11 @@ class DiscordBotHandler():
         discussion.creators_state.interrupt_all()
         
     async def on_ready(self):
+        if not self.__watch.is_running():
+            self.__watch.start()
+
         assert self.__client.user
         
-        await self.__tree.sync()
         await self.__client.user.edit(username=self.__client.user.name)
         print(f'Logged in as {self.__client.user}')
         

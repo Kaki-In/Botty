@@ -5,7 +5,17 @@ from ..discussion.message import ChatbotMessage
 from ..discussion.discussion import ChatbotDiscussion
 from ..chatbot_data import ChatbotSpecs
 
+from .operation import ChatbotOperation
 class ChatbotMessageProcessor(_abc.ABC):
+    def __init__(self, *operations: ChatbotOperation) -> None:
+        super().__init__()
+        
+        self.__operations = operations
+    
+    @property
+    def operations(self) -> _T.Sequence[ChatbotOperation]:
+        return self.__operations
+    
     @_abc.abstractmethod
     def process_message(self, message: ChatbotMessage, from_discussion: ChatbotDiscussion, specs: ChatbotSpecs) -> None:
         ...
