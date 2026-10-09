@@ -15,8 +15,9 @@ class _ollama_file_configuration_object(_T.TypedDict):
     hostname: str
     model_name: str
     options: dict[str, _T.Any]
-    supports_multimodal: bool
-    thinking: bool
+    supports_multimodal: _T.NotRequired[bool]
+    thinking: _T.NotRequired[bool]
+    keep_alive: _T.NotRequired[bool]
 
 class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
     def build_from(self, directory: _saves.ResourcesDirectory) -> 'OllamaChatCompletor':
@@ -29,17 +30,16 @@ class OllamaChatCompletorFactory(_interactions.CreatorFactory[_interactions.Chat
                 'top_k': 256,
                 'temperature': 0.5
             },
-            'supports_multimodal': False,
             'thinking': False
         })
         config = conf_file.read_configuration()
 
         client = _ollama.Client(config['hostname'])
 
-        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), config.get('supports_multimodal') or False, config.get('thinking') or False)
+        return OllamaChatCompletor(client, config['model_name'], _ollama.Options(**config['options']), config.get('supports_multimodal') or False, config.get('thinking') or False, config.get('keep_alive') or None)
 
 class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]):
-    def __init__(self, client: _ollama.Client, model_name: str, base_options: _ollama.Options, supports_multimodal: bool, thinking: bool) -> None:
+    def __init__(self, client: _ollama.Client, model_name: str, base_options: _ollama.Options, supports_multimodal: bool, thinking: bool, keep_alive: bool | None) -> None:
         super().__init__()
 
         self.__client = client
@@ -47,6 +47,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
         self.__base_options = base_options
         self.__supports_multimodal = supports_multimodal
         self.__thinking = thinking
+        self.__keep_alive = keep_alive
 
     def get_messages_tools_json(self, description: _interactions.ChatCompletionDescription, runtime_tools_results: _T.Sequence[_interactions.ChatCompletionTool.ChatCompletionToolResult]) -> tuple[_T.Sequence[_ollama.Message], None | _T.Sequence[_ollama.Tool], _T.Any]:
         usable_tools = [tool for tool in description.tools if not (tool.is_ephemeral and tool.name in [result.tool_name for result in runtime_tools_results])]
@@ -166,7 +167,7 @@ class OllamaChatCompletor(_interactions.Creator[_interactions.ChatCompletionDesc
                 options=self.__base_options,
                 format=schema,
                 think=self.__thinking,
-                keep_alive=0,
+                keep_alive=self.__keep_alive,
                 tools=tools
             )
             
