@@ -10,11 +10,6 @@ import asyncio as _asyncio
 class CreatorsMap():
     def __init__(self) -> None:
         self.__creators: dict[tuple[_T.Type, _T.Type], CreatorFactory] = {}
-        self.__current_creator: _T.Optional[Creator] = None
-
-    @property
-    def current_creator(self) -> Creator | None:
-        return self.__current_creator
  
     def get_creator_factory[InteractionDescriptorType, InteractionType](self,
                                                                 iobjt: _T.Type[InteractionDescriptorType],

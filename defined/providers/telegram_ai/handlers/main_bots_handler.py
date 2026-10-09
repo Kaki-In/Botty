@@ -12,7 +12,7 @@ class MainTelegramBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider):
         super().__init__()
         
         self.__message_methods = list(message_methods)
-        self.__creator_facts: list[tuple[_interactions.CreatorFactory, _T.Type, _T.Type]] = []
+        self.__creators_map = _interactions.CreatorsMap()
 
         self.__bots: list[TelegramBotHandler] = []
     
@@ -24,26 +24,14 @@ class MainTelegramBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider):
         return self.__message_methods
 
     def add_creator_factory[iobj, oobj](self, factory: _interactions.CreatorFactory[iobj, oobj], input_type: _T.Type[iobj], output_type: _T.Type[oobj]) -> None:
-        self.__creator_facts.append((factory, input_type, output_type))
-
-    @property
-    def creator_factories(self) -> _T.Sequence[_interactions.CreatorFactory]:
-        return [factory for factory, itype, otype in self.__creator_facts]
-    
-    def _create_creators_map(self) -> _interactions.CreatorsMap:
-        map = _interactions.CreatorsMap()
-
-        for factory, itype, otype in self.__creator_facts:
-            map.add_creator_factory(factory, itype, otype)
-        
-        return map
+        self.__creators_map.add_creator_factory(factory, input_type, output_type)
 
     def get_bot_handler(self, specs: _ai_chatbot_data.ChatbotSpecs) -> TelegramBotHandler:
         for bot in self.__bots:
             if bot.chatbot_specs == specs:
                 return bot
         
-        new_bot = TelegramBotHandler(self._get_new_messages_queues(specs), specs, self._create_creators_map(), self.__message_methods)
+        new_bot = TelegramBotHandler(self._get_new_messages_queues(specs), specs, self.__creators_map, self.__message_methods)
         self.__bots.append(new_bot)
         return new_bot
 
