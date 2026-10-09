@@ -4,9 +4,7 @@ import queue as _queue
 
 from ..discussion.discussion import ChatbotDiscussion
 from .message_processor import ChatbotMessage
-from .operation import ChatbotOperation
-
-from ..chatbot_data import ChatbotSpecs
+from ..chatbot_data import ChatbotOperation, ChatbotSpecs
 
 class ChatbotDiscussionsProvider[discussion: ChatbotDiscussion, message: ChatbotMessage](_abc.ABC):
     def __init__(self, *operations: ChatbotOperation) -> None:

@@ -3,7 +3,7 @@ import interactions as _interactions
 import abc as _abc
 import typing as _T
 
-import ai.chatbots as _ai_chatbots
+from .operation import ChatbotOperation
 
 class ChatbotSpecs(_abc.ABC):
     def __init__(self, name: str, directory: _saves.ResourcesDirectory, message_creator: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
@@ -30,10 +30,10 @@ class ChatbotSpecs(_abc.ABC):
         return self.__configuration_directory
     
     @property
-    def operations(self) -> _T.Sequence[_ai_chatbots.ChatbotOperation]:
+    def operations(self) -> _T.Sequence[ChatbotOperation]:
         return self.__operations
     
-    def _set_operations(self, operations: _T.Sequence[_ai_chatbots.ChatbotOperation]) -> None:
+    def _set_operations(self, operations: _T.Sequence[ChatbotOperation]) -> None:
         self.__operations = operations
     
     def __eq__(self, value: object) -> bool:

@@ -48,7 +48,7 @@ class ChatbotMemoriesDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
         return description
 
 
-class ListMemoriesOperation(_ai_chatbots.ChatbotOperation):
+class ListMemoriesOperation(_ai_chatbot_data.ChatbotOperation):
     def __init__(self, name: str, memories: _T.Sequence[ChatbotMemoriesPreparator]) -> None:
         super().__init__(f'memory-list#{name}', "Liste les mémoires")
         
@@ -63,7 +63,7 @@ class ListMemoriesOperation(_ai_chatbots.ChatbotOperation):
 
         return '\n'.join([name+':'+description for name, description in memories.items()])
 
-class ClearMemoryOperation(_ai_chatbots.ChatbotOperation):
+class ClearMemoryOperation(_ai_chatbot_data.ChatbotOperation):
     def __init__(self, name: str, memories: _T.Sequence[ChatbotMemoriesPreparator]) -> None:
         super().__init__(f'memory-delete#{name}', "Efface une mémoire cible", memory_name=self.Argument.Type.STRING)
         

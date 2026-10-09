@@ -7,12 +7,11 @@ import functools as _functools
 import interactions as _interactions
 
 from ..discussion import ChatbotDiscussion, ChatbotSender, ChatbotMessage
-from ..chatbot_data import ChatbotSpecs
+from ..chatbot_data import ChatbotSpecs, ChatbotOperation
 
 from .discussion_provider import ChatbotDiscussionsProvider
 from .discussion_modifier import ChatbotDiscussionModifier
 from .message_processor import ChatbotMessageProcessor
-from .operation import ChatbotOperation
 
 class Chatbot(_abc.ABC):
     _subclasses = {}

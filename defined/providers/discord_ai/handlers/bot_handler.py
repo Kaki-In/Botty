@@ -17,12 +17,12 @@ import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data, ai.
 
 
 PY_TYPES = {
-    _ai_chatbots.ChatbotOperation.Argument.Type.INT: int, _ai_chatbots.ChatbotOperation.Argument.Type.FLOAT: float, _ai_chatbots.ChatbotOperation.Argument.Type.BOOL: bool,
-    _ai_chatbots.ChatbotOperation.Argument.Type.STRING: str, _ai_chatbots.ChatbotOperation.Argument.Type.DATE: str, _ai_chatbots.ChatbotOperation.Argument.Type.DURATION: str,
+    _ai_chatbot_data.ChatbotOperation.Argument.Type.INT: int, _ai_chatbot_data.ChatbotOperation.Argument.Type.FLOAT: float, _ai_chatbot_data.ChatbotOperation.Argument.Type.BOOL: bool,
+    _ai_chatbot_data.ChatbotOperation.Argument.Type.STRING: str, _ai_chatbot_data.ChatbotOperation.Argument.Type.DATE: str, _ai_chatbot_data.ChatbotOperation.Argument.Type.DURATION: str,
 }
 CONVERTERS = {
-    _ai_chatbots.ChatbotOperation.Argument.Type.DATE: _datetime.date.fromisoformat,
-    _ai_chatbots.ChatbotOperation.Argument.Type.DURATION: lambda s: _datetime.timedelta(seconds=float(s))
+    _ai_chatbot_data.ChatbotOperation.Argument.Type.DATE: _datetime.date.fromisoformat,
+    _ai_chatbot_data.ChatbotOperation.Argument.Type.DURATION: lambda s: _datetime.timedelta(seconds=float(s))
 }
 
 
@@ -64,7 +64,7 @@ class DiscordBotHandler():
         if directly_start:
             self.start()
     
-    def build_command(self, operation: _ai_chatbots.ChatbotOperation) -> _discord.app_commands.Command:
+    def build_command(self, operation: _ai_chatbot_data.ChatbotOperation) -> _discord.app_commands.Command:
         args = sorted(operation.arguments.values(), key=lambda a: not a.is_mandatory)  # obligatoires d'abord
 
         async def callback(interaction: _discord.Interaction, **kwargs):

@@ -1,11 +1,10 @@
 import abc as _abc
 import typing as _T
 
-from ..discussion.message import ChatbotMessage
-from ..discussion.discussion import ChatbotDiscussion
-from ..chatbot_data import ChatbotSpecs
+from ..discussion import ChatbotMessage
+from ..discussion import ChatbotDiscussion
+from ..chatbot_data import ChatbotSpecs, ChatbotOperation
 
-from .operation import ChatbotOperation
 class ChatbotMessageProcessor(_abc.ABC):
     def __init__(self, *operations: ChatbotOperation) -> None:
         super().__init__()

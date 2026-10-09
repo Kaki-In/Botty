@@ -5,7 +5,7 @@ import ai.chatbots as _ai_chatbots, ai.chatbot_data as _ai_chatbot_data, ai.disc
 from .bot_handler import DiscordBotHandler
 from ..objects.discord_discussion import DiscordChatbotDiscussion
 
-class DiscordStopOperation(_ai_chatbots.ChatbotOperation):
+class DiscordStopOperation(_ai_chatbot_data.ChatbotOperation):
     def __init__(self, bots_list: list[DiscordBotHandler]):
         super().__init__("stop", "Efface la discussion en cours")
         
