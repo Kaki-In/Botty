@@ -8,6 +8,8 @@ import typing as _T
 
 class ToolsInserterDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
     def __init__(self, *tools: _interactions.ChatCompletionTool) -> None:
+        super().__init__()
+        
         self.__tools = tools
 
     @property
