@@ -7,11 +7,12 @@ import functools as _functools
 import interactions as _interactions
 
 from ..discussion import ChatbotDiscussion, ChatbotSender, ChatbotMessage
-from ..chatbot_data import ChatbotSpecs, ChatbotOperation
+from ..chatbot_data import ChatbotSpecs
 
 from .discussion_provider import ChatbotDiscussionsProvider
 from .discussion_modifier import ChatbotDiscussionModifier
 from .message_processor import ChatbotMessageProcessor
+from .operation import ChatbotOperation
 
 class Chatbot(_abc.ABC):
     _subclasses = {}
@@ -25,8 +26,6 @@ class Chatbot(_abc.ABC):
         self.__discussions_providers: list[ChatbotDiscussionsProvider] = []
         self.__modifiers = list(modifiers or [])
         self.__messages_processors = list(processors or [])
-        
-        self.__specs._set_operations(self.operations)
 
         self.__should_stop = False
     
@@ -35,11 +34,14 @@ class Chatbot(_abc.ABC):
         @_functools.wraps(f)
         def new_func(self: _self, *args: _func_params.args, **kwargs: _func_params.kwargs) -> _ret:
             result = f(self, *args, **kwargs)
-            self.__specs._set_operations(self.operations)
+            
+            for provider in self.__discussions_providers:
+                provider.update_operations(self.__specs, self.operations)
+            
             return result
         
         return new_func
-    
+
     @property
     def name(self) -> str:
         return self.__specs.name

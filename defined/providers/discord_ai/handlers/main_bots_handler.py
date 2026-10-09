@@ -53,6 +53,11 @@ class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChat
         except:
             return []
 
+    def update_operations(self, specs: _ai_chatbot_data.ChatbotSpecs, operations: _T.Sequence[_ai_chatbots.ChatbotOperation]) -> None:
+        bot = self.get_bot_handler(specs)
+        bot._set_operations(operations)
+
     def stop_all_bots(self, should_wait: bool = False) -> None:
         for bot in self.__bots:
             bot.stop(should_wait)
+

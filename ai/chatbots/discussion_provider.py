@@ -4,7 +4,9 @@ import queue as _queue
 
 from ..discussion.discussion import ChatbotDiscussion
 from .message_processor import ChatbotMessage
-from ..chatbot_data import ChatbotOperation, ChatbotSpecs
+from ..chatbot_data import ChatbotSpecs
+
+from .operation import ChatbotOperation
 
 class ChatbotDiscussionsProvider[discussion: ChatbotDiscussion, message: ChatbotMessage](_abc.ABC):
     def __init__(self, *operations: ChatbotOperation) -> None:
@@ -35,6 +37,10 @@ class ChatbotDiscussionsProvider[discussion: ChatbotDiscussion, message: Chatbot
             self.__new_messages_queues[specs.name] = _queue.Queue()
         
         return self.__new_messages_queues[specs.name].get()
+    
+    @_abc.abstractmethod
+    def update_operations(self, specs: ChatbotSpecs, operations: _T.Sequence[ChatbotOperation]) -> None:
+        ...
     
     @_abc.abstractmethod
     def load_all_discussions(self, specs: ChatbotSpecs) -> _T.Sequence[ChatbotDiscussion]:

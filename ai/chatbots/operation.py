@@ -3,7 +3,7 @@ import enum as _enum
 import abc as _abc
 
 from ..discussion import ChatbotDiscussion
-from . import ChatbotSpecs
+from ..chatbot_data import ChatbotSpecs
 
 class ChatbotOperation(_abc.ABC):
     class Argument:

@@ -57,4 +57,8 @@ class MainTelegramBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider):
         for bot in self.__bots:
             bot.stop(should_wait)
 
+    def update_operations(self, specs: _ai_chatbot_data.ChatbotSpecs, operations: _T.Sequence[_ai_chatbots.ChatbotOperation]) -> None:
+        ... # not compatible yet
+
+
 

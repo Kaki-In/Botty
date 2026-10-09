@@ -1,7 +1,9 @@
 import interactions as _interactions
 import typing as _T
 
-from ..chatbot_data import ChatbotSpecs, ChatbotOperation
+from .operation import ChatbotOperation
+
+from ..chatbot_data import ChatbotSpecs
 from ..discussion import ChatbotDiscussion
 
 import abc as _abc

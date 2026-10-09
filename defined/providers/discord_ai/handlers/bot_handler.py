@@ -17,12 +17,12 @@ import ai.discussion as _ai_discussion, ai.chatbot_data as _ai_chatbot_data, ai.
 
 
 PY_TYPES = {
-    _ai_chatbot_data.ChatbotOperation.Argument.Type.INT: int, _ai_chatbot_data.ChatbotOperation.Argument.Type.FLOAT: float, _ai_chatbot_data.ChatbotOperation.Argument.Type.BOOL: bool,
-    _ai_chatbot_data.ChatbotOperation.Argument.Type.STRING: str, _ai_chatbot_data.ChatbotOperation.Argument.Type.DATE: str, _ai_chatbot_data.ChatbotOperation.Argument.Type.DURATION: str,
+    _ai_chatbots.ChatbotOperation.Argument.Type.INT: int, _ai_chatbots.ChatbotOperation.Argument.Type.FLOAT: float, _ai_chatbots.ChatbotOperation.Argument.Type.BOOL: bool,
+    _ai_chatbots.ChatbotOperation.Argument.Type.STRING: str, _ai_chatbots.ChatbotOperation.Argument.Type.DATE: str, _ai_chatbots.ChatbotOperation.Argument.Type.DURATION: str,
 }
 CONVERTERS = {
-    _ai_chatbot_data.ChatbotOperation.Argument.Type.DATE: _datetime.date.fromisoformat,
-    _ai_chatbot_data.ChatbotOperation.Argument.Type.DURATION: lambda s: _datetime.timedelta(seconds=float(s))
+    _ai_chatbots.ChatbotOperation.Argument.Type.DATE: _datetime.date.fromisoformat,
+    _ai_chatbots.ChatbotOperation.Argument.Type.DURATION: lambda s: _datetime.timedelta(seconds=float(s))
 }
 
 
@@ -52,6 +52,7 @@ class DiscordBotHandler():
         self.__client = _discord.Client(intents=intents)
 
         self.__tree = _discord.app_commands.CommandTree(self.__client)
+        self.__operations: _T.Sequence[_ai_chatbots.ChatbotOperation] = ()
         
         self.__thread = _threading.Thread(target=self.__run)
 
@@ -64,7 +65,7 @@ class DiscordBotHandler():
         if directly_start:
             self.start()
     
-    def build_command(self, operation: _ai_chatbot_data.ChatbotOperation) -> _discord.app_commands.Command:
+    def build_command(self, operation: _ai_chatbots.ChatbotOperation) -> _discord.app_commands.Command:
         args = sorted(operation.arguments.values(), key=lambda a: not a.is_mandatory)  # obligatoires d'abord
 
         async def callback(interaction: _discord.Interaction, **kwargs):
@@ -120,10 +121,13 @@ class DiscordBotHandler():
 
         return _discord.app_commands.Command(name=operation.name, description=operation.description, callback=callback)
 
+    def _set_operations(self, operations: _T.Sequence[_ai_chatbots.ChatbotOperation]) -> None:
+        self.__operations = operations
+
     def __operations_state(self) -> tuple:
         return tuple(
-            (op.name, tuple((a.name, a.type, a.is_mandatory) for a in op.arguments.values()))
-            for op in self.chatbot_specs.operations
+            (operation.name, tuple((a.name, a.type, a.is_mandatory) for a in operation.arguments.values()))
+            for operation in self.__operations
         )
 
     async def refresh_commands(self) -> None:
@@ -133,13 +137,13 @@ class DiscordBotHandler():
             return
 
         self.__tree.clear_commands(guild=None)
-        for operation in self.chatbot_specs.operations:
+        for operation in self.__operations:
             self.__tree.add_command(self.build_command(operation))
             
         await self.__tree.sync()
         self.__last_tree_state = state
 
-    @_discord_ext_tasks.loop(minutes=5)
+    @_discord_ext_tasks.loop(minutes=1)
     async def __watch(self) -> None:
         await self.refresh_commands()
 

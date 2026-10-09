@@ -3,7 +3,9 @@ import typing as _T
 
 from ..discussion import ChatbotMessage
 from ..discussion import ChatbotDiscussion
-from ..chatbot_data import ChatbotSpecs, ChatbotOperation
+from ..chatbot_data import ChatbotSpecs
+
+from .operation import ChatbotOperation
 
 class ChatbotMessageProcessor(_abc.ABC):
     def __init__(self, *operations: ChatbotOperation) -> None:
