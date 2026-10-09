@@ -1,9 +1,6 @@
 import saves as _saves
 import interactions as _interactions
 import abc as _abc
-import typing as _T
-
-from ..chatbots.operation import ChatbotOperation
 
 class ChatbotSpecs(_abc.ABC):
     def __init__(self, name: str, directory: _saves.ResourcesDirectory, message_creator: _interactions.CreatorFactory[_interactions.ChatCompletionDescription, _interactions.ChatCompletionResult]) -> None:
