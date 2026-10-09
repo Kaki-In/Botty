@@ -79,7 +79,7 @@ class DiscordBotHandler():
             channel = interaction.channel
             
             if not isinstance(channel, (_discord.TextChannel, _discord.DMChannel)):
-                await interaction.response.send_message("Commande non supportée ici.", ephemeral=True)
+                await interaction.followup.send("Commande non supportée ici.", ephemeral=True)
                 return
             
             if isinstance(channel, _discord.DMChannel):
@@ -93,14 +93,14 @@ class DiscordBotHandler():
             result = await _asyncio.to_thread(operation._proceed, self.__chatbot_specs, discussion, **values)
             
             try:
-                await interaction.response.send_message(embed = _discord.Embed(
+                await interaction.followup.send(embed = _discord.Embed(
                     title=f"Opération effectuée",
                     description=result[:2000],
                     color=_discord.Color.green()
                 ))
             
             except Exception as exc:
-                await interaction.response.send_message(embed = _discord.Embed(
+                await interaction.followup.send(embed = _discord.Embed(
                     title=f"Une erreur s'est produite",
                     description=str(exc),
                     color=_discord.Color.green(),
