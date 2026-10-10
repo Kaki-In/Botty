@@ -136,12 +136,15 @@ class DiscordBotHandler():
         if state == self.__last_tree_state:
             return
 
-        self.__tree.clear_commands(guild=None)
-        for operation in self.__operations:
-            self.__tree.add_command(self.build_command(operation))
-            
-        await self.__tree.sync()
-        self.__last_tree_state = state
+        try:
+            self.__tree.clear_commands(guild=None)
+            for operation in self.__operations:
+                self.__tree.add_command(self.build_command(operation))
+                
+            await self.__tree.sync()
+            self.__last_tree_state = state
+        except Exception as exc:
+            print("Could not reload commands :", repr(exc))
 
     @_discord_ext_tasks.loop(minutes=1)
     async def __watch(self) -> None:

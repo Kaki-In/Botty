@@ -50,7 +50,7 @@ class ChatbotMemoriesDiscussionModifier(_ai_chatbots.ChatbotDiscussionModifier):
 
 class ListMemoriesOperation(_ai_chatbots.ChatbotOperation):
     def __init__(self, name: str, memories: _T.Sequence[ChatbotMemoriesPreparator]) -> None:
-        super().__init__(f'memory-list#{name}', "Liste les mémoires")
+        super().__init__(f'memory-list-{name}', "Liste les mémoires")
         
         self.__memories_preparators = memories
     
@@ -65,7 +65,7 @@ class ListMemoriesOperation(_ai_chatbots.ChatbotOperation):
 
 class ClearMemoryOperation(_ai_chatbots.ChatbotOperation):
     def __init__(self, name: str, memories: _T.Sequence[ChatbotMemoriesPreparator]) -> None:
-        super().__init__(f'memory-delete#{name}', "Efface une mémoire cible", memory_name=self.Argument.Type.STRING)
+        super().__init__(f'memory-delete-{name}', "Efface une mémoire cible", memory_name=self.Argument.Type.STRING)
         
         self.arguments["memory_name"].is_mandatory = False
         
