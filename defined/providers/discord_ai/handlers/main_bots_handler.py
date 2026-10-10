@@ -13,6 +13,8 @@ class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChat
         self.__bots: list[DiscordBotHandler] = []
         super().__init__(DiscordStopOperation(self.__bots))
         
+        self.__bots_operations: dict[str, _T.Sequence[_ai_chatbots.ChatbotOperation]] = {}
+        
         self.__message_methods = list(message_methods)
         self.__creators_map = _interactions.CreatorsMap()
         
@@ -32,6 +34,9 @@ class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChat
                 return bot
 
         new_bot = DiscordBotHandler(self._get_new_messages_queues(specs), specs, self.__creators_map, self.__message_methods)
+        if specs.name in self.__bots_operations:
+            new_bot._set_operations(self.__bots_operations[specs.name])
+        
         self.__bots.append(new_bot)
         return new_bot
 
@@ -42,6 +47,8 @@ class MainDiscordBotsHandler(_ai_chatbots.ChatbotDiscussionsProvider[DiscordChat
             return []
 
     def update_operations(self, specs: _ai_chatbot_data.ChatbotSpecs, operations: _T.Sequence[_ai_chatbots.ChatbotOperation]) -> None:
+        self.__bots_operations[specs.name] = operations
+        
         try:
             bot = self.get_bot_handler(specs)
         except:
